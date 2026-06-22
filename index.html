@@ -554,8 +554,13 @@
                 <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Owner Information</h3>
 
                 <div class="form-group">
-                    <label for="ownerName">Owner Name *</label>
+                    <label for="ownerName" id="ownerLabel">Owner Name *</label>
                     <input type="text" id="ownerName" placeholder="Full name of property owner" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="responsiblePerson" id="responsiblePersonLabel" class="hidden">Responsible Person *</label>
+                    <input type="text" id="responsiblePerson" placeholder="Name of responsible person" class="hidden">
                 </div>
 
                 <div class="form-group">
@@ -575,14 +580,15 @@
 
                 <div class="form-group">
                     <label for="propertyType">Property Type *</label>
-                    <select id="propertyType" required>
+                    <select id="propertyType" onchange="updateOwnerLabel()" required>
                         <option value="">Select type</option>
                         <option value="residential">Residential</option>
                         <option value="commercial">Commercial</option>
                         <option value="mixed">Mixed Use</option>
-                        <option value="agricultural">Agricultural</option>
-                        <option value="industrial">Industrial</option>
-                        <option value="vacant">Vacant Land</option>
+                        <option value="education">Education (School/College)</option>
+                        <option value="church">Church</option>
+                        <option value="ngo">NGO</option>
+                        <option value="govt">Government</option>
                     </select>
                 </div>
 
@@ -771,7 +777,7 @@
                         <div class="record-header">
                             <div>
                                 <div class="record-id">ID: ${r.propertyId}</div>
-                                <div class="record-detail">${r.ownerName}</div>
+                                <div class="record-detail"><strong>${r.ownerType || 'Owner'}:</strong> ${r.ownerName}</div>
                             </div>
                             <span class="record-status ${r.taxPaid ? '' : 'pending'}">
                                 ${r.taxPaid ? '✓ Paid' : 'Pending'}
@@ -856,8 +862,8 @@
                         <div style="margin-bottom: 12px;">
                             <strong style="display: block; margin-bottom: 8px;">Owner Information</strong>
                             <div style="font-size: 13px; line-height: 1.8;">
-                                <div><strong>Name:</strong> ${record.ownerName}</div>
-                                <div><strong>Father/Husband:</strong> ${record.fatherHusbandName}</div>
+                                <div><strong>${record.ownerType || 'Owner'}:</strong> ${record.ownerName}</div>
+                                ${record.fatherHusbandName ? `<div><strong>Father/Husband:</strong> ${record.fatherHusbandName}</div>` : ''}
                                 <div><strong>Contact:</strong> ${record.contact}</div>
                             </div>
                         </div>
@@ -910,12 +916,21 @@
         function saveRecord(event) {
             event.preventDefault();
 
+            const propertyType = document.getElementById('propertyType').value;
+            const institutionTypes = ['education', 'church', 'ngo', 'govt'];
+            
+            // Use responsible person for institutions, owner name for others
+            const ownerOrResponsible = institutionTypes.includes(propertyType) 
+                ? document.getElementById('responsiblePerson').value
+                : document.getElementById('ownerName').value;
+
             const data = {
                 propertyId: document.getElementById('propertyId').value,
-                ownerName: document.getElementById('ownerName').value,
+                ownerName: ownerOrResponsible,
+                ownerType: institutionTypes.includes(propertyType) ? 'Responsible Person' : 'Owner',
                 fatherHusbandName: document.getElementById('fatherHusbandName').value,
                 contact: document.getElementById('contact').value,
-                propertyType: document.getElementById('propertyType').value,
+                propertyType: propertyType,
                 buildingType: document.getElementById('buildingType').value,
                 remarks: document.getElementById('remarks').value,
                 taxPaid: document.getElementById('taxPaid').checked,
@@ -939,6 +954,36 @@
             clearPhoto();
             clearLocation();
             document.getElementById('alertBox').innerHTML = '';
+            updateOwnerLabel();
+        }
+
+        // Update owner/responsible person label based on property type
+        function updateOwnerLabel() {
+            const propertyType = document.getElementById('propertyType').value;
+            const ownerLabel = document.getElementById('ownerLabel');
+            const ownerInput = document.getElementById('ownerName');
+            const responsibleLabel = document.getElementById('responsiblePersonLabel');
+            const responsibleInput = document.getElementById('responsiblePerson');
+
+            const institutionTypes = ['education', 'church', 'ngo', 'govt'];
+
+            if (institutionTypes.includes(propertyType)) {
+                // Show responsible person, hide owner name
+                ownerLabel.classList.add('hidden');
+                ownerInput.classList.add('hidden');
+                ownerInput.removeAttribute('required');
+                responsibleLabel.classList.remove('hidden');
+                responsibleInput.classList.remove('hidden');
+                responsibleInput.setAttribute('required', 'required');
+            } else {
+                // Show owner name, hide responsible person
+                ownerLabel.classList.remove('hidden');
+                ownerInput.classList.remove('hidden');
+                ownerInput.setAttribute('required', 'required');
+                responsibleLabel.classList.add('hidden');
+                responsibleInput.classList.add('hidden');
+                responsibleInput.removeAttribute('required');
+            }
         }
 
         // Photo handling
@@ -1011,11 +1056,12 @@
             }
 
             const csv = [
-                ['Property ID', 'Owner Name', 'Father/Husband', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ['Property ID', 'Owner/Responsible Person', 'Owner Type', 'Father/Husband', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
                 ...app.records.map(r => [
                     r.propertyId,
                     r.ownerName,
-                    r.fatherHusbandName,
+                    r.ownerType || 'Owner',
+                    r.fatherHusbandName || '',
                     r.contact,
                     r.propertyType,
                     r.buildingType || '',
