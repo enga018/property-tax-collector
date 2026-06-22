@@ -587,6 +587,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="buildingType">Building Type * (for tax calculation)</label>
+                    <select id="buildingType" required>
+                        <option value="">Select building type</option>
+                        <option value="rcc">RCC (Reinforced Concrete)</option>
+                        <option value="semi-rcc">Semi RCC</option>
+                        <option value="assam">Assam Type</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label>Location (GPS Based)</label>
                     <button type="button" class="btn-photo" onclick="captureLocation()" style="width: 100%;">📍 Capture Current Location</button>
                     <div id="locationStatus" class="location-status hidden"></div>
@@ -769,6 +779,7 @@
                         </div>
                         <div class="record-detail">📱 ${r.contact}</div>
                         <div class="record-detail">🏠 ${r.propertyType}</div>
+                        <div class="record-detail">🏢 ${r.buildingType}</div>
                         ${r.latitude ? `<div class="record-detail">📍 GPS: ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}</div>` : ''}
                         <div class="record-detail" style="font-size: 12px; color: #999;">
                             ${new Date(r.timestamp).toLocaleDateString()} ${new Date(r.timestamp).toLocaleTimeString()}
@@ -797,8 +808,27 @@
                 this.records.forEach(r => {
                     types[r.propertyType] = (types[r.propertyType] || 0) + 1;
                 });
+                
+                // Building type breakdown
+                const buildingTypes = {};
+                this.records.forEach(r => {
+                    const building = r.buildingType || 'Not specified';
+                    buildingTypes[building] = (buildingTypes[building] || 0) + 1;
+                });
+                
+                // Format building type names
+                const buildingTypeNames = {
+                    'rcc': 'RCC (Reinforced Concrete)',
+                    'semi-rcc': 'Semi RCC',
+                    'assam': 'Assam Type',
+                    'Not specified': 'Not specified'
+                };
+                
                 document.getElementById('propertyTypeBreakdown').innerHTML = Object.entries(types)
                     .map(([type, count]) => `<div>${type}: <strong>${count}</strong></div>`)
+                    .join('') + '<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">' +
+                    Object.entries(buildingTypes)
+                    .map(([type, count]) => `<div>${buildingTypeNames[type] || type}: <strong>${count}</strong></div>`)
                     .join('');
 
                 // Recent activity
@@ -835,7 +865,8 @@
                         <div style="margin-bottom: 12px;">
                             <strong style="display: block; margin-bottom: 8px;">Property Details</strong>
                             <div style="font-size: 13px; line-height: 1.8;">
-                                <div><strong>Type:</strong> ${record.propertyType}</div>
+                                <div><strong>Property Type:</strong> ${record.propertyType}</div>
+                                <div><strong>Building Type:</strong> ${record.buildingType}</div>
                                 ${record.latitude ? `<div><strong>GPS:</strong> ${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)} (±${record.accuracy?.toFixed(0)}m)</div>` : ''}
                             </div>
                         </div>
@@ -885,6 +916,7 @@
                 fatherHusbandName: document.getElementById('fatherHusbandName').value,
                 contact: document.getElementById('contact').value,
                 propertyType: document.getElementById('propertyType').value,
+                buildingType: document.getElementById('buildingType').value,
                 remarks: document.getElementById('remarks').value,
                 taxPaid: document.getElementById('taxPaid').checked,
                 latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
@@ -979,13 +1011,14 @@
             }
 
             const csv = [
-                ['Property ID', 'Owner Name', 'Father/Husband', 'Contact', 'Property Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ['Property ID', 'Owner Name', 'Father/Husband', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
                 ...app.records.map(r => [
                     r.propertyId,
                     r.ownerName,
                     r.fatherHusbandName,
                     r.contact,
                     r.propertyType,
+                    r.buildingType || '',
                     r.latitude || '',
                     r.longitude || '',
                     r.taxPaid ? 'Yes' : 'No',
