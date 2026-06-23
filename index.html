@@ -912,6 +912,13 @@ function renderMyRecords(records) {
 
 function renderFollowUp(records) {
     const items = records.filter(r => needsFollowUp(r));
+    // Admin-flagged corrections first, then newest by date
+    items.sort((a,b) => {
+        const ac = a.needsCorrection === true ? 1 : 0;
+        const bc = b.needsCorrection === true ? 1 : 0;
+        if (ac !== bc) return bc - ac; // corrections (1) before non-corrections (0)
+        return (b.adminFlaggedAt||b.localTimestamp||'').localeCompare(a.adminFlaggedAt||a.localTimestamp||'');
+    });
     const list = document.getElementById('followUpList');
     const empty = document.getElementById('followUpEmpty');
     if (!items.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
@@ -1018,6 +1025,7 @@ async function loadAdminData() {
             snap.docs.forEach(d => { allUsers[d.id] = {...d.data(), uid:d.id}; });
             renderWorkers();
             populateWorkerFilter();
+            renderAdminOverview();
         });
     } catch(e) { console.error(e); }
 }
@@ -1028,7 +1036,7 @@ function renderAdminOverview() {
     document.getElementById('adminTotal').textContent = allRecords.length;
     document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
     document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
-    document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.role==='worker').length;
+    document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).length;
 
     const bc={}, pc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; });
@@ -1054,7 +1062,7 @@ function renderAllRecords(filtered) {
 }
 
 function renderWorkers() {
-    const workers = Object.values(allUsers).filter(u => u.role === 'worker');
+    const workers = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL);
     const el = document.getElementById('workersList');
     if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet. Add one above.</p></div>'; return; }
     el.innerHTML = workers.map(u => {
@@ -1084,7 +1092,7 @@ function populateWorkerFilter() {
     const sel = document.getElementById('filterWorker');
     const cur = sel.value;
     sel.innerHTML = '<option value="">All Workers</option>' +
-        Object.values(allUsers).filter(u=>u.role==='worker').map(u=>`<option value="${u.uid}">${u.name}</option>`).join('');
+        Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).map(u=>`<option value="${u.uid}">${u.name}</option>`).join('');
     sel.value = cur;
 }
 
