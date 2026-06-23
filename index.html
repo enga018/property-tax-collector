@@ -1245,14 +1245,15 @@ async function resetEverything() {
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
+        ['Property ID','Latitude','Longitude','Property Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Worker Name','Date'],
         ...records.map(r=>[
-            r.propertyId, r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
+            r.propertyId, r.latitude||'', r.longitude||'',
+            r.propertyType, r.buildingType,
+            r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
-            r.propertyType, r.buildingType,
-            r.latitude||'', r.longitude||'', r.accuracy||'',
-            r.remarks||'', allUsers[r.workerUid]?.name||r.workerEmail||'',
+            r.accuracy||'', r.remarks||'',
+            allUsers[r.workerUid]?.name||r.workerEmail||'',
             r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
         ])
     ];
