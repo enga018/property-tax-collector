@@ -445,6 +445,15 @@
             <div class="section-title">Data Management</div>
             <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
             <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Owner Absent Only</button>
+            <hr class="divider">
+            <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
+            <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
+                <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
+                    <b>Reset Everything</b> permanently deletes <b>all records</b> and <b>all worker profiles</b>. Your admin login stays. This cannot be undone.
+                    <br><br>💡 Tip: Export your data first!
+                </div>
+                <button class="btn-danger" onclick="resetEverything()" style="width:100%">🗑️ Delete All Records & Workers</button>
+            </div>
         </div>
     </div>
 </div>
@@ -711,6 +720,8 @@ async function saveRecord(e) {
     try {
         btn.textContent = '⏳ Saving...';
         if (editingRecordId) {
+            data.adminFlagNote = firebase.firestore.FieldValue.delete();
+            data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
             await db.collection('records').doc(editingRecordId).update(data);
             showAlert('✓ Record updated successfully!', 'success');
         } else {
@@ -878,7 +889,7 @@ function renderMyRecords(records) {
     const empty = document.getElementById('myEmptyRecords');
     if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = filtered.map(r => recordCard(r, false)).join('');
+    list.innerHTML = filtered.map(r => recordCard(r, 'myrecords')).join('');
 }
 
 function renderFollowUp(records) {
@@ -887,7 +898,7 @@ function renderFollowUp(records) {
     const empty = document.getElementById('followUpEmpty');
     if (!absent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = absent.map(r => recordCard(r, false)).join('');
+    list.innerHTML = absent.map(r => recordCard(r, 'followup')).join('');
 }
 
 function isRecordAbsent(r) {
@@ -898,8 +909,10 @@ function isRecordAbsent(r) {
     return !r.ownerName;
 }
 
-function recordCard(r, showWorker) {
+function recordCard(r, context) {
     const absent = isRecordAbsent(r);
+    const isAdminView = context === 'admin';
+    const showWorker = isAdminView;
     return `<div class="record-card ${absent?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -916,12 +929,27 @@ function recordCard(r, showWorker) {
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
             ${showWorker ? `<span class="badge badge-worker">👤 ${r.workerName||'Unknown'}</span>` : ''}
         </div>
+        ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ Admin note: ${r.adminFlagNote}</div>` : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
-            ${!showWorker ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
-            ${isAdmin ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
+            ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            ${isAdminView && !absent ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Mark Incomplete</button>` : ''}
+            ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
+}
+
+async function adminMarkIncomplete(id, propId) {
+    const reason = prompt(`Mark ${propId} as incomplete?\nThis sends it back to the worker's Follow Up tab.\n\nOptional note (e.g. "name spelling wrong"):`);
+    if (reason === null) return; // cancelled
+    try {
+        await db.collection('records').doc(id).update({
+            isAbsent: true,
+            adminFlagNote: reason || 'Marked incomplete by admin',
+            adminFlaggedAt: new Date().toISOString()
+        });
+        showAlert(propId + ' sent back to worker for follow-up', 'success');
+    } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function adminDeleteRecord(id, propId) {
@@ -977,7 +1005,7 @@ function renderAllRecords(filtered) {
     const empty = document.getElementById('allEmptyRecords');
     if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = records.map(r => recordCard(r, true)).join('');
+    list.innerHTML = records.map(r => recordCard(r, 'admin')).join('');
 }
 
 function renderWorkers() {
@@ -1060,6 +1088,33 @@ async function saveAdminSettings() {
 // ========== EXPORT ==========
 function exportAllData() { exportCSV(allRecords, 'all-records'); }
 function exportAbsentData() { exportCSV(allRecords.filter(r=>isRecordAbsent(r)), 'owner-absent'); }
+
+async function resetEverything() {
+    if (!confirm('⚠️ This will DELETE ALL records and ALL workers permanently.\n\nAre you absolutely sure?')) return;
+    const typed = prompt('To confirm, type the word:  RESET');
+    if (typed !== 'RESET') { alert('Cancelled — you did not type RESET.'); return; }
+    try {
+        // Delete all records
+        const recSnap = await db.collection('records').get();
+        let batch = db.batch(); let count = 0;
+        for (const doc of recSnap.docs) {
+            batch.delete(doc.ref); count++;
+            if (count % 400 === 0) { await batch.commit(); batch = db.batch(); }
+        }
+        await batch.commit();
+        // Delete all worker profiles (keep admin)
+        const userSnap = await db.collection('users').get();
+        let batch2 = db.batch(); let c2 = 0;
+        for (const doc of userSnap.docs) {
+            if (doc.data().email !== ADMIN_EMAIL) { batch2.delete(doc.ref); c2++; }
+            if (c2 % 400 === 0 && c2 > 0) { await batch2.commit(); batch2 = db.batch(); }
+        }
+        await batch2.commit();
+        alert('✓ Reset complete. All records and worker profiles deleted.\n\nNote: Worker login credentials may still exist in Firebase Authentication — remove them from the Firebase Console > Authentication if needed.');
+    } catch(e) {
+        alert('Error during reset: ' + e.message);
+    }
+}
 
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
