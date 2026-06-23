@@ -4,1195 +4,983 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property Tax Collector</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #2c5282;
-            --primary-light: #3182ce;
-            --primary-dark: #1e3a5f;
-            --success: #22863a;
-            --warning: #cb2431;
-            --bg: #f5f7fa;
-            --surface: #ffffff;
-            --text: #24292e;
-            --text-secondary: #586069;
-            --border: #d1d5da;
-            --focus: #0366d6;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 10px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 20px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .header p {
-            font-size: 13px;
-            opacity: 0.95;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px 16px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-            position: relative;
-            bottom: -2px;
-        }
-
-        .tab-btn:hover {
-            color: var(--text);
-            background: rgba(0,0,0,0.02);
-        }
-
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        /* Forms */
-        .form-section {
-            display: none;
-        }
-
-        .form-section.active {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: var(--text);
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"],
-        input[type="number"],
-        input[type="date"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="tel"]:focus,
-        input[type="number"]:focus,
-        input[type="date"]:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--focus);
-            box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        input[type="checkbox"],
-        input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .checkbox-item label {
-            margin: 0;
-            font-weight: 400;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        /* Photo section */
-        .photo-container {
-            margin-top: 20px;
-        }
-
-        .photo-preview {
-            width: 100%;
-            max-width: 300px;
-            border-radius: 6px;
-            margin-top: 10px;
-            border: 2px solid var(--border);
-            background: var(--bg);
-        }
-
-        .photo-buttons {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .btn-photo {
-            flex: 1;
-            padding: 10px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-photo:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-photo:active {
-            transform: scale(0.98);
-        }
-
-        /* GPS Location */
-        .location-status {
-            padding: 10px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            margin: 10px 0;
-            background: #e7f5ff;
-            color: #0c3c72;
-            border: 1px solid #74c0fc;
-        }
-
-        .location-status.success {
-            background: #e6ffed;
-            color: #22863a;
-            border-color: #28a745;
-        }
-
-        .location-status.error {
-            background: #ffebee;
-            color: #cb2431;
-            border-color: #ea4c89;
-        }
-
-        /* Buttons */
-        .button-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 24px;
-        }
-
-        button {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            flex: 1;
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            flex: 1;
-            background: var(--border);
-            color: var(--text);
-        }
-
-        .btn-secondary:hover {
-            background: #c6cbd1;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #1a6e2e;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #a61d1d;
-        }
-
-        /* Records List */
-        .records-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .record-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 12px;
-            transition: all 0.2s;
-        }
-
-        .record-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .record-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 8px;
-        }
-
-        .record-id {
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .record-status {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: #e6ffed;
-            color: var(--success);
-            font-weight: 500;
-        }
-
-        .record-status.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .record-detail {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin: 4px 0;
-        }
-
-        .record-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .btn-small {
-            flex: 1;
-            padding: 6px 8px;
-            font-size: 12px;
-            border-radius: 4px;
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary);
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--surface);
-            border-radius: 8px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        /* Alerts */
-        .alert {
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
-
-        .alert-success {
-            background: #e6ffed;
-            color: #22863a;
-            border: 1px solid #28a745;
-        }
-
-        .alert-error {
-            background: #ffebee;
-            color: #cb2431;
-            border: 1px solid #ea4c89;
-        }
-
-        .alert-info {
-            background: #e7f5ff;
-            color: #0c3c72;
-            border: 1px solid #74c0fc;
-        }
-
-        /* Utility */
-        .hidden {
-            display: none !important;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-muted {
-            color: var(--text-secondary);
-        }
-
-        .mt-10 {
-            margin-top: 10px;
-        }
-
-        .mt-20 {
-            margin-top: 20px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .container {
-                padding: 8px;
-            }
-
-            .header {
-                padding: 16px 12px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        input[type="file"] {
-            display: none;
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --primary:#2c5282;--primary-dark:#1e3a5f;--success:#22863a;
+            --warning:#cb2431;--bg:#f5f7fa;--surface:#fff;--text:#24292e;
+            --text2:#586069;--border:#d1d5da;--focus:#0366d6
+        }
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+        .container{max-width:600px;margin:0 auto;padding:10px;min-height:100vh}
+
+        /* AUTH SCREEN */
+        .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+        .auth-box{background:var(--surface);border-radius:12px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+        .auth-logo{text-align:center;margin-bottom:24px}
+        .auth-logo h1{font-size:22px;color:var(--primary);margin-top:8px}
+        .auth-logo p{font-size:13px;color:var(--text2);margin-top:4px}
+        .auth-tabs{display:flex;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+        .auth-tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:500;cursor:pointer;background:none;border:none;color:var(--text2);transition:all 0.2s}
+        .auth-tab.active{background:var(--primary);color:white}
+
+        /* HEADER */
+        .header{background:var(--primary);color:white;padding:16px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+        .header-left h1{font-size:18px;font-weight:600}
+        .header-left p{font-size:12px;opacity:0.9;margin-top:2px}
+        .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+        .user-badge{background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:20px;font-size:12px}
+        .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer}
+        .btn-logout:hover{background:rgba(255,255,255,0.25)}
+
+        /* TABS */
+        .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:8px;padding:4px;border:1px solid var(--border)}
+        .tab-btn{flex:1;padding:8px 4px;background:none;border:none;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;border-radius:6px;transition:all 0.2s}
+        .tab-btn.active{background:var(--primary);color:white}
+
+        /* FORMS */
+        .form-section{display:none}.form-section.active{display:block}
+        .form-group{margin-bottom:14px}
+        label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+        input[type=text],input[type=email],input[type=tel],input[type=password],select,textarea{
+            width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;
+            font-size:14px;font-family:inherit;background:var(--surface)
+        }
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.1)}
+        textarea{resize:vertical;min-height:70px}
+
+        /* BUTTONS */
+        button{padding:10px 16px;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:inherit}
+        .btn-primary{background:var(--primary);color:white;width:100%}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-primary:active{transform:scale(0.98)}
+        .btn-secondary{background:var(--border);color:var(--text);width:100%}
+        .btn-secondary:hover{background:#c6cbd1}
+        .btn-danger{background:var(--warning);color:white}
+        .btn-danger:hover{background:#a61d1d}
+        .btn-photo{background:var(--primary);color:white;padding:10px;font-size:13px;border-radius:6px}
+        .btn-small{padding:6px 10px;font-size:12px;border-radius:4px}
+        .button-group{display:flex;gap:8px;margin-top:20px}
+        input[type=file]{display:none}
+
+        /* PHOTO */
+        .photo-preview{width:100%;max-width:300px;border-radius:6px;margin-top:10px;border:2px solid var(--border);display:none}
+        .photo-buttons{display:flex;gap:8px;margin-top:8px}
+
+        /* LOCATION */
+        .location-status{padding:10px 12px;border-radius:6px;font-size:13px;margin:8px 0;background:#e7f5ff;color:#0c3c72;border:1px solid #74c0fc}
+        .location-status.success{background:#e6ffed;color:#22863a;border-color:#28a745}
+        .location-status.error{background:#ffebee;color:#cb2431;border-color:#ea4c89}
+
+        /* RECORDS */
+        .records-list{display:flex;flex-direction:column;gap:10px}
+        .record-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+        .record-id{font-weight:600;color:var(--primary);font-size:14px}
+        .record-detail{font-size:13px;color:var(--text2);margin:3px 0}
+        .record-actions{display:flex;gap:8px;margin-top:8px}
+        .worker-tag{font-size:11px;background:#e7f5ff;color:#0c3c72;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+
+        /* STATS */
+        .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+        .stat-value{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
+        .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+
+        /* ADMIN */
+        .admin-header{background:linear-gradient(135deg,#1e3a5f,#2c5282);color:white;padding:16px;border-radius:8px;margin-bottom:16px}
+        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:8px}
+        .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
+        .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
+        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+        .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
+        .worker-stat-val{font-size:20px;font-weight:700;color:var(--primary)}
+        .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
+        .filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+        .filter-bar select{flex:1;min-width:120px;font-size:13px;padding:8px}
+
+        /* ALERTS */
+        .alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
+        .alert-success{background:#e6ffed;color:#22863a;border:1px solid #28a745}
+        .alert-error{background:#ffebee;color:#cb2431;border:1px solid #ea4c89}
+        .alert-info{background:#e7f5ff;color:#0c3c72;border:1px solid #74c0fc}
+
+        /* MODAL */
+        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+        .modal.active{display:flex}
+        .modal-content{background:var(--surface);border-radius:10px;padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);position:relative}
+        .modal-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);padding:4px 8px}
+        .modal-header{font-size:17px;font-weight:600;margin-bottom:14px;padding-right:30px}
+
+        /* MISC */
+        .hidden{display:none!important}
+        .sync-status{font-size:11px;padding:3px 8px;border-radius:10px;display:inline-block}
+        .sync-ok{background:#e6ffed;color:#22863a}
+        .sync-pending{background:#fff3cd;color:#856404}
+        .sync-error{background:#ffebee;color:#cb2431}
+        .empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
+        .empty-state-icon{font-size:48px;margin-bottom:12px}
+        .divider{margin:16px 0;border:none;border-top:1px solid var(--border)}
+        .section-title{font-size:14px;font-weight:600;margin-bottom:10px}
+        .loading{text-align:center;padding:20px;color:var(--text2);font-size:14px}
+        @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}.worker-stats{grid-template-columns:repeat(3,1fr)}}
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-screen">
+    <div class="auth-box">
+        <div class="auth-logo">
+            <div style="font-size:40px">🏘️</div>
+            <h1>Property Tax Collector</h1>
+            <p>Village Council Field Data App</p>
+        </div>
+        <div id="authAlert"></div>
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+            <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="loginEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password">
+            </div>
+            <button class="btn-primary" onclick="loginUser()" style="margin-top:8px">🔐 Login</button>
+            <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
+                Don't have an account? <a href="#" onclick="switchAuthTab('register')" style="color:var(--primary)">Register here</a>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" class="hidden">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="regName" placeholder="Your full name">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="regPhone" placeholder="10-digit mobile number">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="regEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="regPassword" placeholder="Minimum 6 characters">
+            </div>
+            <button class="btn-primary" onclick="registerUser()" style="margin-top:8px">✅ Create Account</button>
+            <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
+                Already have an account? <a href="#" onclick="switchAuthTab('login')" style="color:var(--primary)">Login here</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:#999;text-align:center">
+        Contact your supervisor to get registered
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="container hidden">
+
+    <!-- WORKER VIEW -->
+    <div id="workerView">
         <div class="header">
-            <h1>🏘️ Property Tax Collector</h1>
-            <p id="vcName" style="font-size: 14px; margin-top: 8px; font-weight: 500;"></p>
-            <p>Door-to-door data collection for property tax assessment</p>
+            <div class="header-left">
+                <h1>🏘️ Property Tax Collector</h1>
+                <p id="vcNameDisplay"></p>
+            </div>
+            <div class="header-right">
+                <span class="user-badge" id="userNameBadge">👤</span>
+                <span class="sync-status sync-ok" id="syncStatus">✓ Online</span>
+                <button class="btn-logout" onclick="logoutUser()">Logout</button>
+            </div>
         </div>
 
-        <!-- Tabs -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('collect')">Collect</button>
-            <button class="tab-btn" onclick="switchTab('records')">Records</button>
-            <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
-            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+            <button class="tab-btn active" onclick="switchTab('collect', this)">Collect</button>
+            <button class="tab-btn" onclick="switchTab('myrecords', this)">My Records</button>
+            <button class="tab-btn" onclick="switchTab('summary', this)">Summary</button>
         </div>
 
-        <!-- Collect Tab -->
+        <!-- COLLECT TAB -->
         <div id="collect" class="form-section active">
             <div id="alertBox"></div>
-
             <form id="propertyForm" onsubmit="saveRecord(event)">
-                <!-- Property ID Lookup -->
                 <div class="form-group">
-                    <label for="propertyId">Property ID *</label>
-                    <input type="text" id="propertyId" placeholder="Enter property ID from sticker" required>
-                    <div class="text-muted mt-10" style="font-size: 12px;">Scan or enter the ID from the door sticker</div>
+                    <label>Property ID *</label>
+                    <input type="text" id="propertyId" placeholder="Enter ID from door sticker" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="propertyType">Property Type *</label>
+                    <label>Property Type *</label>
                     <select id="propertyType" onchange="updateOwnerLabel()" required>
                         <option value="">Select type</option>
-                        <option value="residential">Residential</option>
-                        <option value="commercial">Commercial</option>
-                        <option value="mixed">Mixed Use</option>
-                        <option value="education">Education (School/College)</option>
-                        <option value="church">Church</option>
-                        <option value="ngo">NGO</option>
-                        <option value="govt">Government</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Mixed Use">Mixed Use</option>
+                        <option value="Education">Education (School/College)</option>
+                        <option value="Church">Church</option>
+                        <option value="NGO">NGO</option>
+                        <option value="Government">Government</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label for="buildingType">Building Type * (for tax calculation)</label>
+                    <label>Building Type * (for tax calculation)</label>
                     <select id="buildingType" required>
                         <option value="">Select building type</option>
-                        <option value="rcc">RCC (Reinforced Concrete)</option>
-                        <option value="semi-rcc">Semi RCC</option>
-                        <option value="assam">Assam Type</option>
+                        <option value="RCC">RCC (Reinforced Concrete)</option>
+                        <option value="Semi RCC">Semi RCC</option>
+                        <option value="Assam Type">Assam Type</option>
                     </select>
                 </div>
+                <hr class="divider">
+                <div class="section-title">Owner Information</div>
 
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+                <!-- Residential/Commercial fields -->
+                <div id="residentialFields">
+                    <div class="form-group">
+                        <label>Owner Name *</label>
+                        <input type="text" id="ownerName" placeholder="Full name of property owner">
+                    </div>
+                    <div class="form-group">
+                        <label>Father/Husband Name *</label>
+                        <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                    </div>
+                </div>
 
-                <!-- Owner Information -->
-                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Owner Information</h3>
-
-                <div class="form-group">
-                    <label for="ownerName" id="ownerLabel">Owner Name *</label>
-                    <input type="text" id="ownerName" placeholder="Full name of property owner" required>
+                <!-- Institution fields -->
+                <div id="institutionFields" class="hidden">
+                    <div class="form-group">
+                        <label>Organization/Institution Name *</label>
+                        <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Person *</label>
+                        <input type="text" id="contactPerson" placeholder="Name of contact person">
+                    </div>
+                    <div class="form-group">
+                        <label>Designation *</label>
+                        <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="organizationName" id="organizationNameLabel" class="hidden">Organization/Department/Institution Name *</label>
-                    <input type="text" id="organizationName" placeholder="e.g., ABC School, XYZ Hospital, NGO Name" class="hidden">
+                    <label>Contact Number *</label>
+                    <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}" required>
                 </div>
-
+                <hr class="divider">
+                <div class="section-title">Location & Photo</div>
                 <div class="form-group">
-                    <label for="responsiblePerson" id="responsiblePersonLabel" class="hidden">Contact Person *</label>
-                    <input type="text" id="responsiblePerson" placeholder="Name of contact person" class="hidden">
-                </div>
-
-                <div class="form-group">
-                    <label for="fatherHusbandName" id="fatherHusbandLabel">Father/Husband Name *</label>
-                    <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="designation" id="designationLabel" class="hidden">Designation *</label>
-                    <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager" class="hidden">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact">Contact Number *</label>
-                    <input type="tel" id="contact" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
-                </div>
-
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-
-                <!-- Location Section -->
-                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Location & Photo</h3>
-
-                <div class="form-group">
-                    <label>Location (GPS Based)</label>
-                    <button type="button" class="btn-photo" onclick="captureLocation()" style="width: 100%;">📍 Capture Current Location</button>
+                    <button type="button" class="btn-photo" onclick="captureLocation()" style="width:100%">📍 Capture GPS Location</button>
                     <div id="locationStatus" class="location-status hidden"></div>
                     <input type="hidden" id="latitude">
                     <input type="hidden" id="longitude">
                     <input type="hidden" id="accuracy">
                 </div>
-
-                <div class="photo-container">
-                    <img id="photoPreview" class="photo-preview hidden">
+                <div class="form-group">
+                    <img id="photoPreview" class="photo-preview">
                     <div class="photo-buttons">
-                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click();">📷 Take Photo</button>
-                        <button type="button" class="btn-photo" onclick="clearPhoto();">✕ Clear</button>
+                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()">📷 Take Photo</button>
+                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666">✕ Clear</button>
                     </div>
                     <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                 </div>
-
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-
-                <!-- Remarks -->
-                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Additional Information</h3>
-
+                <hr class="divider">
                 <div class="form-group">
-                    <label for="remarks">Remarks / Notes</label>
-                    <textarea id="remarks" placeholder="Any additional information about the property or owner..."></textarea>
+                    <label>Remarks / Notes</label>
+                    <textarea id="remarks" placeholder="Any additional information..."></textarea>
                 </div>
-
-                <!-- Submit -->
                 <div class="button-group">
-                    <button type="button" class="btn-secondary" onclick="resetForm()">Clear Form</button>
-                    <button type="submit" class="btn-primary">Save Record</button>
+                    <button type="button" class="btn-secondary" onclick="resetForm()" style="flex:1">Clear</button>
+                    <button type="submit" class="btn-primary" style="flex:2">💾 Save & Sync</button>
                 </div>
             </form>
         </div>
 
-        <!-- Records Tab -->
-        <div id="records" class="form-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="font-size: 16px; font-weight: 600;">Collected Records</h2>
-                <button class="btn-small btn-secondary" onclick="exportData()" style="width: auto;">⬇️ Export</button>
+        <!-- MY RECORDS TAB -->
+        <div id="myrecords" class="form-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div class="section-title" style="margin:0">My Records</div>
+                <button class="btn-small btn-secondary" onclick="exportMyData()" style="width:auto">⬇️ Export</button>
             </div>
-
-            <div id="recordsList" class="records-list"></div>
-
-            <div id="emptyRecords" class="empty-state">
+            <div id="myRecordsList" class="records-list"></div>
+            <div id="myEmptyRecords" class="empty-state">
                 <div class="empty-state-icon">📋</div>
-                <p>No records collected yet.</p>
-                <p style="font-size: 12px; margin-top: 8px;">Start collecting data from the Collect tab.</p>
+                <p>No records yet. Start collecting!</p>
             </div>
         </div>
 
-        <!-- Summary Tab -->
+        <!-- SUMMARY TAB -->
         <div id="summary" class="form-section">
-            <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Collection Summary</h2>
-
+            <div class="section-title">My Collection Summary</div>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalCount">0</div>
-                    <div class="stat-label">Total Records</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="photoCount">0</div>
-                    <div class="stat-label">With Photos</div>
-                </div>
+                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total</div></div>
+                <div class="stat-card"><div class="stat-value" id="myPhotos">0</div><div class="stat-label">With Photos</div></div>
+                <div class="stat-card"><div class="stat-value" id="myGPS">0</div><div class="stat-label">With GPS</div></div>
+                <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
             </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
-                <div class="stat-card">
-                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Property Types</div>
-                    <div id="propertyTypeBreakdown" style="font-size: 13px; line-height: 1.8; color: var(--text-secondary);"></div>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Recent Activity</div>
-                    <div id="recentActivity" style="font-size: 13px; line-height: 1.8; color: var(--text-secondary);"></div>
-                </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">Building Types</div>
+                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2)"></div>
             </div>
+            <div class="stat-card">
+                <div class="section-title">Property Types</div>
+                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2)"></div>
+            </div>
+            <button class="btn-primary" onclick="exportMyData()" style="margin-top:12px">⬇️ Export My Data (CSV)</button>
+        </div>
+    </div>
 
-            <div style="margin-top: 20px;">
-                <button class="btn-primary" onclick="exportData()" style="width: 100%;">⬇️ Export All Data as CSV</button>
-                <button class="btn-secondary" onclick="clearAllData()" style="width: 100%; margin-top: 8px;">🗑️ Clear All Records</button>
+    <!-- ADMIN VIEW -->
+    <div id="adminView" class="hidden">
+        <div class="admin-header">
+            <div class="admin-badge">👑 ADMIN</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h1 style="font-size:18px;font-weight:600">🏘️ Admin Dashboard</h1>
+                    <p id="adminVcName" style="font-size:12px;opacity:0.9;margin-top:2px"></p>
+                </div>
+                <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
 
-        <!-- Settings Tab -->
-        <div id="settings" class="form-section">
-            <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Settings</h2>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchAdminTab('overview', this)">Overview</button>
+            <button class="tab-btn" onclick="switchAdminTab('allrecords', this)">All Records</button>
+            <button class="tab-btn" onclick="switchAdminTab('workers', this)">Workers</button>
+            <button class="tab-btn" onclick="switchAdminTab('adminsettings', this)">Settings</button>
+        </div>
 
+        <!-- OVERVIEW -->
+        <div id="overview" class="form-section active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="adminTotal">0</div><div class="stat-label">Total Records</div></div>
+                <div class="stat-card"><div class="stat-value" id="adminWorkers">0</div><div class="stat-label">Active Workers</div></div>
+                <div class="stat-card"><div class="stat-value" id="adminToday">0</div><div class="stat-label">Today</div></div>
+                <div class="stat-card"><div class="stat-value" id="adminPhotos">0</div><div class="stat-label">With Photos</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="stat-card">
+                    <div class="section-title">Building Types</div>
+                    <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:1.9"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="section-title">Property Types</div>
+                    <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:1.9"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="section-title">Worker Performance Today</div>
+                <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
+            </div>
+            <button class="btn-primary" onclick="exportAllData()" style="margin-top:12px">⬇️ Export All Data (CSV)</button>
+        </div>
+
+        <!-- ALL RECORDS -->
+        <div id="allrecords" class="form-section">
+            <div class="filter-bar">
+                <select id="filterWorker" onchange="filterRecords()">
+                    <option value="">All Workers</option>
+                </select>
+                <select id="filterType" onchange="filterRecords()">
+                    <option value="">All Types</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Mixed Use">Mixed Use</option>
+                    <option value="Education">Education</option>
+                    <option value="Church">Church</option>
+                    <option value="NGO">NGO</option>
+                    <option value="Government">Government</option>
+                </select>
+                <select id="filterBuilding" onchange="filterRecords()">
+                    <option value="">All Buildings</option>
+                    <option value="RCC">RCC</option>
+                    <option value="Semi RCC">Semi RCC</option>
+                    <option value="Assam Type">Assam Type</option>
+                </select>
+            </div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
+            <div id="allRecordsList" class="records-list"></div>
+            <div id="allEmptyRecords" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No records found.</p>
+            </div>
+        </div>
+
+        <!-- WORKERS -->
+        <div id="workers" class="form-section">
+            <div class="section-title" style="margin-bottom:12px">Registered Workers</div>
+            <div id="workersList"></div>
+        </div>
+
+        <!-- ADMIN SETTINGS -->
+        <div id="adminsettings" class="form-section">
+            <div class="section-title">App Settings</div>
             <div class="form-group">
-                <label for="vcNameInput">Village Council / Organization Name *</label>
-                <input type="text" id="vcNameInput" placeholder="Enter your Village Council name" required>
-                <div class="text-muted mt-10" style="font-size: 12px;">This name will appear at the top of the app</div>
+                <label>Village Council Name</label>
+                <input type="text" id="adminVcInput" placeholder="Enter Village Council name">
             </div>
-
-            <div class="button-group">
-                <button class="btn-primary" onclick="saveVCName()" style="width: 100%;">💾 Save Name</button>
-            </div>
-
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-
-            <div style="padding: 16px; background: var(--bg); border-radius: 6px; margin-bottom: 16px;">
-                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">📊 Data Management</h3>
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
-                    All data is stored locally on this device. Export regularly to keep backups.
-                </p>
-                <button class="btn-primary" onclick="exportData()" style="width: 100%; margin-bottom: 8px;">⬇️ Export Data as CSV</button>
-                <button class="btn-secondary" onclick="clearAllData()" style="width: 100%;">🗑️ Delete All Records</button>
-            </div>
-
-            <div style="padding: 16px; background: #e7f5ff; border-radius: 6px; border: 1px solid #74c0fc;">
-                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #0c3c72;">ℹ️ App Information</h3>
-                <p style="font-size: 12px; color: #0c3c72; line-height: 1.6;">
-                    <strong>Version:</strong> 1.0<br>
-                    <strong>Data Storage:</strong> Local (on this device)<br>
-                    <strong>Works Offline:</strong> Yes<br>
-                    <strong>Syncing:</strong> No (each device independent)
-                </p>
-            </div>
+            <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
+            <hr class="divider">
+            <div class="section-title">Add Worker Account</div>
+            <div class="alert alert-info">Workers register themselves using the app's Register tab. Their accounts appear here once created.</div>
+            <hr class="divider">
+            <div class="section-title">Data Management</div>
+            <button class="btn-primary" onclick="exportAllData()">⬇️ Export All Data (CSV)</button>
         </div>
     </div>
+</div>
 
-    <!-- Detail Modal -->
-    <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()">×</button>
-            <div class="modal-header">Record Details</div>
-            <div id="modalBody"></div>
-        </div>
+<!-- Detail Modal -->
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-header">Property Details</div>
+        <div id="modalBody"></div>
     </div>
+</div>
 
-    <script>
-        // Initialize app
-        class PropertyTaxApp {
-            constructor() {
-                this.records = this.loadRecords();
-                this.updateUI();
-            }
+<script>
+// ========== FIREBASE CONFIG ==========
+// REPLACE THESE VALUES with your Firebase project config
+const firebaseConfig = {
+    apiKey: "REPLACE_WITH_YOUR_API_KEY",
+    authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+    projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+    storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
+    messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+    appId: "REPLACE_WITH_YOUR_APP_ID"
+};
 
-            // Storage
-            loadRecords() {
-                const data = localStorage.getItem('propertyTaxRecords');
-                return data ? JSON.parse(data) : [];
-            }
+// Admin email - only this user sees admin view
+const ADMIN_EMAIL = "REPLACE_WITH_YOUR_ADMIN_EMAIL";
 
-            saveToStorage() {
-                localStorage.setItem('propertyTaxRecords', JSON.stringify(this.records));
-            }
+// ========== INIT ==========
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-            // Records
-            addRecord(data) {
-                const record = {
-                    id: Date.now(),
-                    timestamp: new Date().toISOString(),
-                    ...data
-                };
-                this.records.unshift(record);
-                this.saveToStorage();
-                return record;
-            }
+let currentUser = null;
+let isAdmin = false;
+let allRecords = [];
+let allUsers = {};
 
-            deleteRecord(recordId) {
-                this.records = this.records.filter(r => r.id !== recordId);
-                this.saveToStorage();
-            }
-
-            getRecord(recordId) {
-                return this.records.find(r => r.id === recordId);
-            }
-
-            // UI Updates
-            updateUI() {
-                this.updateRecordsList();
-                this.updateSummary();
-            }
-
-            updateRecordsList() {
-                const list = document.getElementById('recordsList');
-                const empty = document.getElementById('emptyRecords');
-
-                if (this.records.length === 0) {
-                    list.innerHTML = '';
-                    empty.classList.remove('hidden');
-                    return;
-                }
-
-                empty.classList.add('hidden');
-                list.innerHTML = this.records.map(r => `
-                    <div class="record-card">
-                        <div class="record-header">
-                            <div>
-                                <div class="record-id">ID: ${r.propertyId}</div>
-                                ${r.organizationName ? `<div class="record-detail"><strong>Organization:</strong> ${r.organizationName}</div>` : ''}
-                                <div class="record-detail"><strong>${r.ownerType || 'Owner'}:</strong> ${r.ownerName}</div>
-                                ${r.fatherHusbandName ? `<div class="record-detail"><strong>${r.fatherHusbandType || 'Father/Husband'}:</strong> ${r.fatherHusbandName}</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="record-detail">📱 ${r.contact}</div>
-                        <div class="record-detail">🏠 ${r.propertyType}</div>
-                        <div class="record-detail">🏢 ${r.buildingType}</div>
-                        ${r.latitude ? `<div class="record-detail">📍 GPS: ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}</div>` : ''}
-                        <div class="record-detail" style="font-size: 12px; color: #999;">
-                            ${new Date(r.timestamp).toLocaleDateString()} ${new Date(r.timestamp).toLocaleTimeString()}
-                        </div>
-                        <div class="record-actions">
-                            <button class="btn-small btn-primary" onclick="app.showDetail(${r.id})">View</button>
-                            <button class="btn-small btn-warning" onclick="app.deleteRecord(${r.id}); app.updateUI();">Delete</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            updateSummary() {
-                const total = this.records.length;
-                const withPhotos = this.records.filter(r => r.photo).length;
-
-                document.getElementById('totalCount').textContent = total;
-                document.getElementById('photoCount').textContent = withPhotos;
-
-                // Property type breakdown
-                const types = {};
-                this.records.forEach(r => {
-                    types[r.propertyType] = (types[r.propertyType] || 0) + 1;
-                });
-                
-                // Building type breakdown
-                const buildingTypes = {};
-                this.records.forEach(r => {
-                    const building = r.buildingType || 'Not specified';
-                    buildingTypes[building] = (buildingTypes[building] || 0) + 1;
-                });
-                
-                // Format building type names
-                const buildingTypeNames = {
-                    'rcc': 'RCC (Reinforced Concrete)',
-                    'semi-rcc': 'Semi RCC',
-                    'assam': 'Assam Type',
-                    'Not specified': 'Not specified'
-                };
-                
-                document.getElementById('propertyTypeBreakdown').innerHTML = Object.entries(types)
-                    .map(([type, count]) => `<div>${type}: <strong>${count}</strong></div>`)
-                    .join('') + '<hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">' +
-                    Object.entries(buildingTypes)
-                    .map(([type, count]) => `<div>${buildingTypeNames[type] || type}: <strong>${count}</strong></div>`)
-                    .join('');
-
-                // Recent activity
-                const recent = this.records.slice(0, 3);
-                document.getElementById('recentActivity').innerHTML = recent.length > 0
-                    ? recent.map(r => `<div>${r.ownerName} (${new Date(r.timestamp).toLocaleDateString()})</div>`).join('')
-                    : '<div style="color: #999;">No recent activity</div>';
-            }
-
-            showDetail(recordId) {
-                const record = this.getRecord(recordId);
-                if (!record) return;
-
-                const modal = document.getElementById('detailModal');
-                const body = document.getElementById('modalBody');
-
-                let html = `
-                    <div style="margin-bottom: 16px;">
-                        <div style="padding: 12px; background: var(--bg); border-radius: 6px; margin-bottom: 12px;">
-                            <strong>Property ID:</strong> ${record.propertyId}<br>
-                            <strong>Status:</strong> ${record.taxPaid ? '✓ Tax Paid' : '⏳ Pending'}<br>
-                            <strong>Date:</strong> ${new Date(record.timestamp).toLocaleString()}
-                        </div>
-
-                        <div style="margin-bottom: 12px;">
-                            <strong style="display: block; margin-bottom: 8px;">Owner Information</strong>
-                            <div style="font-size: 13px; line-height: 1.8;">
-                                ${record.organizationName ? `<div><strong>Organization/Institution:</strong> ${record.organizationName}</div>` : ''}
-                                <div><strong>${record.ownerType || 'Owner'}:</strong> ${record.ownerName}</div>
-                                ${record.fatherHusbandName ? `<div><strong>${record.fatherHusbandType || 'Father/Husband'}:</strong> ${record.fatherHusbandName}</div>` : ''}
-                                <div><strong>Contact:</strong> ${record.contact}</div>
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 12px;">
-                            <strong style="display: block; margin-bottom: 8px;">Property Details</strong>
-                            <div style="font-size: 13px; line-height: 1.8;">
-                                <div><strong>Property Type:</strong> ${record.propertyType}</div>
-                                <div><strong>Building Type:</strong> ${record.buildingType}</div>
-                                ${record.latitude ? `<div><strong>GPS:</strong> ${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)} (±${record.accuracy?.toFixed(0)}m)</div>` : ''}
-                            </div>
-                        </div>
-
-                        ${record.remarks ? `
-                        <div style="margin-bottom: 12px;">
-                            <strong style="display: block; margin-bottom: 8px;">Notes</strong>
-                            <div style="font-size: 13px; background: var(--bg); padding: 8px; border-radius: 4px;">
-                                ${record.remarks}
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        ${record.photo ? `
-                        <div style="margin-bottom: 12px;">
-                            <strong style="display: block; margin-bottom: 8px;">Property Photo</strong>
-                            <img src="${record.photo}" style="width: 100%; border-radius: 6px; max-height: 300px; object-fit: cover;">
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-
-                body.innerHTML = html;
-                modal.classList.add('active');
-            }
+// ========== AUTH ==========
+auth.onAuthStateChanged(async user => {
+    if (user) {
+        currentUser = user;
+        isAdmin = user.email === ADMIN_EMAIL;
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        if (isAdmin) {
+            document.getElementById('workerView').classList.add('hidden');
+            document.getElementById('adminView').classList.remove('hidden');
+            loadAdminData();
+        } else {
+            document.getElementById('workerView').classList.remove('hidden');
+            document.getElementById('adminView').classList.add('hidden');
+            const profile = await getUserProfile(user.uid);
+            document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
+            loadVCName();
+            loadMyRecords();
         }
+    } else {
+        currentUser = null;
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+    }
+});
 
-        // Initialize app
-        const app = new PropertyTaxApp();
+async function getUserProfile(uid) {
+    try {
+        const doc = await db.collection('users').doc(uid).get();
+        return doc.exists ? doc.data() : null;
+    } catch(e) { return null; }
+}
 
-        // Load and display VC name on page load
-        function loadVCName() {
-            const vcName = localStorage.getItem('vcName');
-            if (vcName) {
-                document.getElementById('vcName').textContent = `📍 ${vcName}`;
-                document.getElementById('vcNameInput').value = vcName;
-            }
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+    document.getElementById('authAlert').innerHTML = '';
+}
+
+async function loginUser() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPassword').value;
+    if (!email || !pass) return showAuthAlert('Please fill all fields', 'error');
+    try {
+        showAuthAlert('Logging in...', 'info');
+        await auth.signInWithEmailAndPassword(email, pass);
+    } catch(e) {
+        showAuthAlert(friendlyError(e.code), 'error');
+    }
+}
+
+async function registerUser() {
+    const name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPassword').value;
+    if (!name || !phone || !email || !pass) return showAuthAlert('Please fill all fields', 'error');
+    if (phone.length !== 10 || isNaN(phone)) return showAuthAlert('Phone must be 10 digits', 'error');
+    if (pass.length < 6) return showAuthAlert('Password must be at least 6 characters', 'error');
+    try {
+        showAuthAlert('Creating account...', 'info');
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('users').doc(cred.user.uid).set({
+            name, phone, email, role: 'worker',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) {
+        showAuthAlert(friendlyError(e.code), 'error');
+    }
+}
+
+function logoutUser() {
+    if (confirm('Are you sure you want to logout?')) auth.signOut();
+}
+
+function friendlyError(code) {
+    const errors = {
+        'auth/user-not-found': 'No account found with this email',
+        'auth/wrong-password': 'Incorrect password',
+        'auth/email-already-in-use': 'Email already registered',
+        'auth/weak-password': 'Password too weak (min 6 chars)',
+        'auth/invalid-email': 'Invalid email address',
+        'auth/too-many-requests': 'Too many attempts. Try again later',
+        'auth/invalid-credential': 'Invalid email or password'
+    };
+    return errors[code] || 'Something went wrong. Please try again.';
+}
+
+function showAuthAlert(msg, type) {
+    document.getElementById('authAlert').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+// ========== FORM ==========
+const INSTITUTION_TYPES = ['Education', 'Church', 'NGO', 'Government'];
+
+function updateOwnerLabel() {
+    const type = document.getElementById('propertyType').value;
+    const isInst = INSTITUTION_TYPES.includes(type);
+    document.getElementById('residentialFields').classList.toggle('hidden', isInst);
+    document.getElementById('institutionFields').classList.toggle('hidden', !isInst);
+    // Handle required
+    ['ownerName','fatherHusbandName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) isInst ? el.removeAttribute('required') : el.setAttribute('required','required');
+    });
+    ['organizationName','contactPerson','designation'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) !isInst ? el.removeAttribute('required') : el.setAttribute('required','required');
+    });
+}
+
+async function saveRecord(e) {
+    e.preventDefault();
+    const type = document.getElementById('propertyType').value;
+    const isInst = INSTITUTION_TYPES.includes(type);
+    const photoEl = document.getElementById('photoPreview');
+
+    const data = {
+        propertyId: document.getElementById('propertyId').value.trim(),
+        propertyType: type,
+        buildingType: document.getElementById('buildingType').value,
+        contact: document.getElementById('contact').value.trim(),
+        remarks: document.getElementById('remarks').value.trim(),
+        latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+        longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+        accuracy: document.getElementById('accuracy').value ? parseFloat(document.getElementById('accuracy').value) : null,
+        photo: (photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href) ? photoEl.src : null,
+        workerUid: currentUser.uid,
+        workerEmail: currentUser.email,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        localTimestamp: new Date().toISOString()
+    };
+
+    if (isInst) {
+        data.isInstitution = true;
+        data.organizationName = document.getElementById('organizationName').value.trim();
+        data.contactPerson = document.getElementById('contactPerson').value.trim();
+        data.designation = document.getElementById('designation').value.trim();
+        data.ownerName = data.contactPerson;
+        data.ownerType = 'Contact Person';
+    } else {
+        data.isInstitution = false;
+        data.ownerName = document.getElementById('ownerName').value.trim();
+        data.fatherHusbandName = document.getElementById('fatherHusbandName').value.trim();
+        data.ownerType = 'Owner';
+    }
+
+    // Get worker name from profile
+    const profile = await getUserProfile(currentUser.uid);
+    data.workerName = profile?.name || currentUser.email;
+
+    try {
+        document.querySelector('[type=submit]').textContent = '⏳ Saving...';
+        await db.collection('records').add(data);
+        showAlert('✓ Record saved and synced to cloud!', 'success');
+        resetForm();
+        loadMyRecords();
+        setTimeout(() => switchTab('myrecords', document.querySelectorAll('.tab-btn')[1]), 800);
+    } catch(err) {
+        showAlert('❌ Error saving: ' + err.message, 'error');
+    } finally {
+        document.querySelector('[type=submit]').textContent = '💾 Save & Sync';
+    }
+}
+
+function resetForm() {
+    document.getElementById('propertyForm').reset();
+    clearPhoto();
+    clearLocation();
+    document.getElementById('alertBox').innerHTML = '';
+    document.getElementById('institutionFields').classList.add('hidden');
+    document.getElementById('residentialFields').classList.remove('hidden');
+    ['ownerName','fatherHusbandName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('required','required');
+    });
+    ['organizationName','contactPerson','designation'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.removeAttribute('required');
+    });
+}
+
+// ========== PHOTO & GPS ==========
+function handlePhotoCapture(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const preview = document.getElementById('photoPreview');
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearPhoto() {
+    document.getElementById('photoInput').value = '';
+    const p = document.getElementById('photoPreview');
+    p.src = '';
+    p.style.display = 'none';
+}
+
+function captureLocation() {
+    const status = document.getElementById('locationStatus');
+    if (!navigator.geolocation) {
+        status.className = 'location-status error'; status.textContent = '❌ Geolocation not supported'; status.classList.remove('hidden'); return;
+    }
+    status.className = 'location-status'; status.textContent = '🔄 Capturing location...'; status.classList.remove('hidden');
+    navigator.geolocation.getCurrentPosition(pos => {
+        document.getElementById('latitude').value = pos.coords.latitude;
+        document.getElementById('longitude').value = pos.coords.longitude;
+        document.getElementById('accuracy').value = pos.coords.accuracy;
+        status.className = 'location-status success';
+        status.textContent = `✓ ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (±${pos.coords.accuracy.toFixed(0)}m)`;
+    }, err => {
+        status.className = 'location-status error'; status.textContent = '❌ ' + err.message;
+    }, {enableHighAccuracy:true, timeout:10000});
+}
+
+function clearLocation() {
+    ['latitude','longitude','accuracy'].forEach(id => document.getElementById(id).value = '');
+    const s = document.getElementById('locationStatus');
+    s.classList.add('hidden');
+}
+
+// ========== WORKER DATA ==========
+async function loadMyRecords() {
+    if (!currentUser) return;
+    try {
+        const snap = await db.collection('records').where('workerUid','==',currentUser.uid).orderBy('localTimestamp','desc').get();
+        const records = snap.docs.map(d => ({id:d.id,...d.data()}));
+        renderMyRecords(records);
+        renderMySummary(records);
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function renderMyRecords(records) {
+    const list = document.getElementById('myRecordsList');
+    const empty = document.getElementById('myEmptyRecords');
+    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = records.map(r => `
+        <div class="record-card">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+                <div>
+                    <div class="record-id">ID: ${r.propertyId}</div>
+                    ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
+                    <div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:11px;color:#999">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
+                    ${r.photo ? '<span style="font-size:11px;background:#e6ffed;color:#22863a;padding:2px 6px;border-radius:8px">📷 Photo</span>' : ''}
+                </div>
+            </div>
+            <div class="record-detail">📱 ${r.contact} &nbsp;|&nbsp; 🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
+            ${r.latitude ? `<div class="record-detail">📍 ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}</div>` : ''}
+            <div class="record-actions">
+                <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r)})'>View</button>
+            </div>
+        </div>`).join('');
+}
+
+function renderMySummary(records) {
+    const today = new Date().toDateString();
+    document.getElementById('myTotal').textContent = records.length;
+    document.getElementById('myPhotos').textContent = records.filter(r=>r.photo).length;
+    document.getElementById('myGPS').textContent = records.filter(r=>r.latitude).length;
+    document.getElementById('myToday').textContent = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
+
+    const buildingCounts = {};
+    const propCounts = {};
+    records.forEach(r => {
+        buildingCounts[r.buildingType] = (buildingCounts[r.buildingType]||0)+1;
+        propCounts[r.propertyType] = (propCounts[r.propertyType]||0)+1;
+    });
+    document.getElementById('myBuildingBreakdown').innerHTML = Object.entries(buildingCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data yet</div>';
+    document.getElementById('myPropertyBreakdown').innerHTML = Object.entries(propCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data yet</div>';
+}
+
+// ========== ADMIN DATA ==========
+async function loadAdminData() {
+    loadAdminSettings();
+    try {
+        db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
+            allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminOverview();
+            renderAllRecords();
+        });
+        db.collection('users').onSnapshot(snap => {
+            snap.docs.forEach(d => { allUsers[d.id] = d.data(); });
+            renderWorkers();
+            populateWorkerFilter();
+        });
+    } catch(e) { console.error(e); }
+}
+
+function renderAdminOverview() {
+    const today = new Date().toDateString();
+    const workers = new Set(allRecords.map(r=>r.workerUid));
+    document.getElementById('adminTotal').textContent = allRecords.length;
+    document.getElementById('adminWorkers').textContent = workers.size;
+    document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
+    document.getElementById('adminPhotos').textContent = allRecords.filter(r=>r.photo).length;
+
+    const buildingCounts = {};
+    const propCounts = {};
+    allRecords.forEach(r => {
+        buildingCounts[r.buildingType] = (buildingCounts[r.buildingType]||0)+1;
+        propCounts[r.propertyType] = (propCounts[r.propertyType]||0)+1;
+    });
+    document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(buildingCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data</div>';
+    document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(propCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data</div>';
+
+    // Worker performance today
+    const todayByWorker = {};
+    allRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).forEach(r => {
+        const name = allUsers[r.workerUid]?.name || r.workerEmail || 'Unknown';
+        todayByWorker[name] = (todayByWorker[name]||0)+1;
+    });
+    document.getElementById('adminWorkerToday').innerHTML = Object.entries(todayByWorker).map(([k,v])=>
+        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>${k}</span><b>${v} records</b></div>`
+    ).join('') || '<div style="color:#999">No submissions today</div>';
+}
+
+function renderAllRecords(filtered) {
+    const records = filtered || allRecords;
+    document.getElementById('recordCount').textContent = `Showing ${records.length} records`;
+    const list = document.getElementById('allRecordsList');
+    const empty = document.getElementById('allEmptyRecords');
+    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = records.map(r => `
+        <div class="record-card">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+                <div>
+                    <div class="record-id">ID: ${r.propertyId}</div>
+                    ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
+                    <div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:11px;color:#999">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
+                    ${r.photo ? '<span style="font-size:11px;background:#e6ffed;color:#22863a;padding:2px 6px;border-radius:8px">📷</span>' : ''}
+                </div>
+            </div>
+            <div class="record-detail">📱 ${r.contact} &nbsp;|&nbsp; 🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
+            <div class="worker-tag">👤 ${allUsers[r.workerUid]?.name || r.workerEmail || 'Unknown'}</div>
+            <div class="record-actions">
+                <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r)})'>View</button>
+            </div>
+        </div>`).join('');
+}
+
+function renderWorkers() {
+    const workers = Object.entries(allUsers).filter(([,u]) => u.role === 'worker');
+    const el = document.getElementById('workersList');
+    if (!workers.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers registered yet.</p></div>'; return; }
+    el.innerHTML = workers.map(([uid, u]) => {
+        const workerRecords = allRecords.filter(r => r.workerUid === uid);
+        const today = new Date().toDateString();
+        const todayCount = workerRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
+        const photoCount = workerRecords.filter(r=>r.photo).length;
+        return `<div class="worker-card">
+            <div class="worker-name">👤 ${u.name}</div>
+            <div style="font-size:12px;color:var(--text2)">${u.email} &nbsp;|&nbsp; 📱 ${u.phone||'N/A'}</div>
+            <div class="worker-stats">
+                <div class="worker-stat"><div class="worker-stat-val">${workerRecords.length}</div><div class="worker-stat-lbl">Total</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${photoCount}</div><div class="worker-stat-lbl">Photos</div></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function populateWorkerFilter() {
+    const sel = document.getElementById('filterWorker');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Workers</option>' +
+        Object.entries(allUsers).filter(([,u])=>u.role==='worker').map(([uid,u])=>
+            `<option value="${uid}">${u.name}</option>`
+        ).join('');
+    sel.value = current;
+}
+
+function filterRecords() {
+    const workerFilter = document.getElementById('filterWorker').value;
+    const typeFilter = document.getElementById('filterType').value;
+    const buildingFilter = document.getElementById('filterBuilding').value;
+    let filtered = allRecords;
+    if (workerFilter) filtered = filtered.filter(r => r.workerUid === workerFilter);
+    if (typeFilter) filtered = filtered.filter(r => r.propertyType === typeFilter);
+    if (buildingFilter) filtered = filtered.filter(r => r.buildingType === buildingFilter);
+    renderAllRecords(filtered);
+}
+
+// ========== SETTINGS ==========
+async function loadVCName() {
+    try {
+        const doc = await db.collection('settings').doc('app').get();
+        if (doc.exists && doc.data().vcName) {
+            document.getElementById('vcNameDisplay').textContent = '📍 ' + doc.data().vcName;
         }
+    } catch(e) {}
+}
 
-        // Save VC name
-        function saveVCName() {
-            const vcName = document.getElementById('vcNameInput').value.trim();
-            if (!vcName) {
-                showAlert('Please enter a Village Council name', 'error');
-                return;
-            }
-            localStorage.setItem('vcName', vcName);
-            document.getElementById('vcName').textContent = `📍 ${vcName}`;
-            showAlert('✓ Village Council name saved', 'success');
+async function loadAdminSettings() {
+    try {
+        const doc = await db.collection('settings').doc('app').get();
+        if (doc.exists && doc.data().vcName) {
+            document.getElementById('adminVcName').textContent = '📍 ' + doc.data().vcName;
+            document.getElementById('adminVcInput').value = doc.data().vcName;
         }
+    } catch(e) {}
+}
 
-        // Load on startup
-        window.addEventListener('load', loadVCName);
+async function saveAdminSettings() {
+    const vcName = document.getElementById('adminVcInput').value.trim();
+    if (!vcName) return;
+    try {
+        await db.collection('settings').doc('app').set({ vcName }, { merge: true });
+        document.getElementById('adminVcName').textContent = '📍 ' + vcName;
+        alert('✓ Settings saved!');
+    } catch(e) { alert('Error: ' + e.message); }
+}
 
-        // Tab switching
-        function switchTab(tabName) {
-            document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+// ========== EXPORT ==========
+function exportMyData() {
+    exportCSV(allRecords.filter(r=>r.workerUid===currentUser?.uid), 'my-records');
+}
 
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
+function exportAllData() {
+    exportCSV(allRecords, 'all-records');
+}
 
-        // Form handling
-        function saveRecord(event) {
-            event.preventDefault();
+function exportCSV(records, filename) {
+    if (!records.length) { alert('No records to export'); return; }
+    const rows = [
+        ['Property ID','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband/Designation','Contact','Property Type','Building Type','Latitude','Longitude','Remarks','Worker Name','Date'],
+        ...records.map(r => [
+            r.propertyId, r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
+            r.fatherHusbandName||r.designation||'', r.contact, r.propertyType, r.buildingType,
+            r.latitude||'', r.longitude||'', r.remarks||'',
+            allUsers[r.workerUid]?.name||r.workerEmail||'', r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
+        ])
+    ];
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = `property-tax-${filename}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+}
 
-            const propertyType = document.getElementById('propertyType').value;
-            const institutionTypes = ['education', 'church', 'ngo', 'govt'];
-            
-            // Use responsible person for institutions, owner name for others
-            const ownerOrResponsible = institutionTypes.includes(propertyType) 
-                ? document.getElementById('responsiblePerson').value
-                : document.getElementById('ownerName').value;
+// ========== MODAL ==========
+function showDetail(r) {
+    if (typeof r === 'string') r = JSON.parse(r);
+    document.getElementById('modalBody').innerHTML = `
+        <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
+            <b>Property ID:</b> ${r.propertyId}<br>
+            <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
+            <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
+        </div>
+        ${r.organizationName ? `<div style="margin-bottom:10px"><b>Organization:</b> ${r.organizationName}</div>` : ''}
+        <div style="margin-bottom:10px">
+            <b>${r.ownerType||'Owner'}:</b> ${r.ownerName}<br>
+            ${r.fatherHusbandName ? `<b>Father/Husband:</b> ${r.fatherHusbandName}<br>` : ''}
+            ${r.designation ? `<b>Designation:</b> ${r.designation}<br>` : ''}
+            <b>Contact:</b> ${r.contact}
+        </div>
+        ${r.latitude ? `<div style="margin-bottom:10px"><b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
+        <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">Open in Google Maps →</a></div>` : ''}
+        ${r.remarks ? `<div style="margin-bottom:10px"><b>Remarks:</b> ${r.remarks}</div>` : ''}
+        ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'}</div>` : ''}
+        ${r.photo ? `<div><b>Photo:</b><br><img src="${r.photo}" style="width:100%;border-radius:8px;margin-top:6px;max-height:300px;object-fit:cover"></div>` : ''}
+    `;
+    document.getElementById('detailModal').classList.add('active');
+}
 
-            const data = {
-                propertyId: document.getElementById('propertyId').value,
-                ownerName: ownerOrResponsible,
-                ownerType: institutionTypes.includes(propertyType) ? 'Contact Person' : 'Owner',
-                organizationName: institutionTypes.includes(propertyType)
-                    ? document.getElementById('organizationName').value
-                    : null,
-                fatherHusbandName: institutionTypes.includes(propertyType) 
-                    ? document.getElementById('designation').value
-                    : document.getElementById('fatherHusbandName').value,
-                fatherHusbandType: institutionTypes.includes(propertyType) ? 'Designation' : 'Father/Husband',
-                contact: document.getElementById('contact').value,
-                propertyType: propertyType,
-                buildingType: document.getElementById('buildingType').value,
-                remarks: document.getElementById('remarks').value,
-                latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
-                longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
-                accuracy: document.getElementById('accuracy').value ? parseFloat(document.getElementById('accuracy').value) : null,
-                photo: document.getElementById('photoPreview').src || null
-            };
+function closeModal() {
+    document.getElementById('detailModal').classList.remove('active');
+}
 
-            app.addRecord(data);
-            app.updateUI();
+// ========== TAB SWITCHING ==========
+function switchTab(tabId, btn) {
+    document.querySelectorAll('#workerView .form-section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('#workerView .tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (tabId === 'myrecords') loadMyRecords();
+    if (tabId === 'summary') loadMyRecords();
+}
 
-            showAlert('✓ Record saved successfully', 'success');
-            resetForm();
+function switchAdminTab(tabId, btn) {
+    document.querySelectorAll('#adminView .form-section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('#adminView .tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (btn) btn.classList.add('active');
+}
 
-            setTimeout(() => switchTab('records'), 500);
-        }
-
-        function resetForm() {
-            document.getElementById('propertyForm').reset();
-            clearPhoto();
-            clearLocation();
-            document.getElementById('alertBox').innerHTML = '';
-            updateOwnerLabel();
-        }
-
-        // Update owner/responsible person label based on property type
-        function updateOwnerLabel() {
-            const propertyType = document.getElementById('propertyType').value;
-            const ownerLabel = document.getElementById('ownerLabel');
-            const ownerInput = document.getElementById('ownerName');
-            const organizationNameLabel = document.getElementById('organizationNameLabel');
-            const organizationNameInput = document.getElementById('organizationName');
-            const responsibleLabel = document.getElementById('responsiblePersonLabel');
-            const responsibleInput = document.getElementById('responsiblePerson');
-            const fatherHusbandLabel = document.getElementById('fatherHusbandLabel');
-            const fatherHusbandInput = document.getElementById('fatherHusbandName');
-            const designationLabel = document.getElementById('designationLabel');
-            const designationInput = document.getElementById('designation');
-
-            const institutionTypes = ['education', 'church', 'ngo', 'govt'];
-
-            if (institutionTypes.includes(propertyType)) {
-                // Institution: Show Organization Name, Contact Person, and Designation
-                ownerLabel.classList.add('hidden');
-                ownerInput.classList.add('hidden');
-                ownerInput.removeAttribute('required');
-                
-                organizationNameLabel.classList.remove('hidden');
-                organizationNameInput.classList.remove('hidden');
-                organizationNameInput.setAttribute('required', 'required');
-                
-                responsibleLabel.classList.remove('hidden');
-                responsibleInput.classList.remove('hidden');
-                responsibleInput.setAttribute('required', 'required');
-                
-                fatherHusbandLabel.classList.add('hidden');
-                fatherHusbandInput.classList.add('hidden');
-                fatherHusbandInput.removeAttribute('required');
-                
-                designationLabel.classList.remove('hidden');
-                designationInput.classList.remove('hidden');
-                designationInput.setAttribute('required', 'required');
-            } else {
-                // Residential/Commercial: Show Owner Name and Father/Husband
-                ownerLabel.classList.remove('hidden');
-                ownerInput.classList.remove('hidden');
-                ownerInput.setAttribute('required', 'required');
-                
-                organizationNameLabel.classList.add('hidden');
-                organizationNameInput.classList.add('hidden');
-                organizationNameInput.removeAttribute('required');
-                
-                responsibleLabel.classList.add('hidden');
-                responsibleInput.classList.add('hidden');
-                responsibleInput.removeAttribute('required');
-                
-                fatherHusbandLabel.classList.remove('hidden');
-                fatherHusbandInput.classList.remove('hidden');
-                fatherHusbandInput.setAttribute('required', 'required');
-                
-                designationLabel.classList.add('hidden');
-                designationInput.classList.add('hidden');
-                designationInput.removeAttribute('required');
-            }
-        }
-
-        // Photo handling
-        function handlePhotoCapture(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = document.getElementById('photoPreview');
-                preview.src = e.target.result;
-                preview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function clearPhoto() {
-            document.getElementById('photoInput').value = '';
-            document.getElementById('photoPreview').classList.add('hidden');
-        }
-
-        // GPS Location
-        function captureLocation() {
-            const status = document.getElementById('locationStatus');
-
-            if (!navigator.geolocation) {
-                status.className = 'location-status error';
-                status.textContent = '❌ Geolocation not supported';
-                status.classList.remove('hidden');
-                return;
-            }
-
-            status.className = 'location-status';
-            status.textContent = '🔄 Capturing location...';
-            status.classList.remove('hidden');
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const acc = position.coords.accuracy;
-
-                    document.getElementById('latitude').value = lat;
-                    document.getElementById('longitude').value = lng;
-                    document.getElementById('accuracy').value = acc;
-
-                    status.className = 'location-status success';
-                    status.textContent = `✓ Location captured: ${lat.toFixed(5)}, ${lng.toFixed(5)} (±${acc.toFixed(0)}m)`;
-                },
-                (error) => {
-                    status.className = 'location-status error';
-                    status.textContent = `❌ ${error.message}`;
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        }
-
-        function clearLocation() {
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-            document.getElementById('accuracy').value = '';
-            document.getElementById('locationStatus').classList.add('hidden');
-        }
-
-        // Export data
-        function exportData() {
-            if (app.records.length === 0) {
-                showAlert('No records to export', 'error');
-                return;
-            }
-
-            const csv = [
-                ['Property ID', 'Organization/Institution Name', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Date', 'Remarks'],
-                ...app.records.map(r => [
-                    r.propertyId,
-                    r.organizationName || '',
-                    r.ownerName,
-                    r.ownerType || 'Owner',
-                    r.fatherHusbandName || '',
-                    r.fatherHusbandType || 'Father/Husband',
-                    r.contact,
-                    r.propertyType,
-                    r.buildingType || '',
-                    r.latitude || '',
-                    r.longitude || '',
-                    new Date(r.timestamp).toLocaleString(),
-                    r.remarks || ''
-                ])
-            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `property-tax-records-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            showAlert('✓ Data exported successfully', 'success');
-        }
-
-        // Clear all data
-        function clearAllData() {
-            if (confirm('⚠️ Are you sure? This will delete all records.')) {
-                app.records = [];
-                app.saveToStorage();
-                app.updateUI();
-                showAlert('✓ All records cleared', 'success');
-            }
-        }
-
-        // Modal
-        function closeModal() {
-            document.getElementById('detailModal').classList.remove('active');
-        }
-
-        // Alert
-        function showAlert(message, type) {
-            const box = document.getElementById('alertBox');
-            box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-            setTimeout(() => {
-                if (box.firstChild) box.removeChild(box.firstChild);
-            }, 4000);
-        }
-    </script>
+function showAlert(msg, type) {
+    const box = document.getElementById('alertBox');
+    if (!box) return;
+    box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(()=>{ if(box.firstChild) box.innerHTML=''; }, 4000);
+}
+</script>
 </body>
 </html>
