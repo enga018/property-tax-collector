@@ -412,7 +412,11 @@
                 <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
             </div>
-            <button class="btn-primary" onclick="exportAllData()">⬇️ Export All Data (CSV)</button>
+            <div class="section-title">⬇️ Export Data</div>
+            <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
+            <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100;margin-bottom:8px">⬇️ Export Needs-Follow-Up Only</button>
+            <button class="btn-primary" onclick="exportAllPhotos()" style="background:#6a1b9a">🖼️ Download All Photos (ZIP)</button>
+            <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
         </div>
 
         <!-- ALL RECORDS -->
@@ -471,12 +475,6 @@
                 <input type="text" id="adminVcInput" placeholder="Enter Village Council name">
             </div>
             <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
-            <hr class="divider">
-            <div class="section-title">Data Management</div>
-            <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
-            <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Needs-Follow-Up Only</button>
-            <button class="btn-primary" onclick="exportAllPhotos()" style="background:#6a1b9a;margin-top:8px">🖼️ Download All Photos (ZIP)</button>
-            <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
             <hr class="divider">
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
@@ -572,7 +570,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.7.2";
+const APP_VERSION = "v1.8.0";
 
 
 firebase.initializeApp(firebaseConfig);
