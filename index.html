@@ -558,6 +558,71 @@
     </div>
 </div>
 
+<!-- Assign Range Modal (admin) -->
+<div id="assignRangeModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('assignRangeModal').classList.remove('active')">×</button>
+        <div class="modal-header">🎫 Assign Sticker Range</div>
+        <div id="arAlert"></div>
+        <input type="hidden" id="arUid">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">For: <b id="arName"></b></div>
+        <div class="form-group">
+            <label>Start Number</label>
+            <input type="number" id="arStart" inputmode="numeric" placeholder="e.g. 1 (for NSN-0001)">
+        </div>
+        <div class="form-group">
+            <label>End Number</label>
+            <input type="number" id="arEnd" inputmode="numeric" placeholder="e.g. 150 (for NSN-0150)">
+        </div>
+        <button class="btn-primary" onclick="submitAssignRange()">💾 Assign Range</button>
+    </div>
+</div>
+
+<!-- Remove Worker Modal (admin) -->
+<div id="removeWorkerModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('removeWorkerModal').classList.remove('active')">×</button>
+        <div class="modal-header">🗑 Remove Worker</div>
+        <input type="hidden" id="rwUid">
+        <p style="font-size:14px;color:var(--text);margin-bottom:6px">Remove <b id="rwName"></b> from the worker list?</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Their collected records will remain in the system. Their login may still exist in Firebase Authentication.</p>
+        <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="document.getElementById('removeWorkerModal').classList.remove('active')" style="flex:1">Cancel</button>
+            <button class="btn-danger" onclick="confirmRemoveWorker()" style="flex:1">🗑 Remove</button>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPwModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('forgotPwModal').classList.remove('active')">×</button>
+        <div class="modal-header">🔑 Reset Password</div>
+        <div id="fpAlert"></div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your registered email. We'll send a reset link to it.</p>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="fpEmail" placeholder="your@email.com">
+        </div>
+        <button class="btn-primary" onclick="submitForgotPassword()">📧 Send Reset Link</button>
+    </div>
+</div>
+
+<!-- Delete Record Modal (admin) - danger styled -->
+<div id="deleteRecordModal" class="modal">
+    <div class="modal-content" style="border-top:4px solid var(--warning)">
+        <button class="modal-close" onclick="document.getElementById('deleteRecordModal').classList.remove('active')">×</button>
+        <div class="modal-header" style="color:var(--warning)">⚠️ Delete Record</div>
+        <input type="hidden" id="drId">
+        <p style="font-size:14px;color:var(--text);margin-bottom:6px">Permanently delete record <b id="drPropId"></b>?</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">This removes its GPS, photo, and all details. <b>This cannot be undone.</b></p>
+        <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="document.getElementById('deleteRecordModal').classList.remove('active')" style="flex:1">Cancel</button>
+            <button class="btn-danger" onclick="confirmDeleteRecord()" style="flex:1">⚠️ Delete</button>
+        </div>
+    </div>
+</div>
+
 <!-- Edit Worker Modal (admin) -->
 <div id="editWorkerModal" class="modal">
     <div class="modal-content">
@@ -610,7 +675,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.12.0";
+const APP_VERSION = "v1.12.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -759,20 +824,29 @@ async function addWorker() {
     } catch(e) { showAddWorkerAlert(friendlyError(e.code), 'error'); }
 }
 
-async function assignRange(uid, name, curStart, curEnd) {
-    const startStr = prompt(`Assign sticker range for ${name}.\n\nEnter START number (e.g. 1 for NSN-0001):`, curStart!==null?curStart:'');
-    if (startStr === null) return;
-    const endStr = prompt(`Enter END number (e.g. 150 for NSN-0150):`, curEnd!==null?curEnd:'');
-    if (endStr === null) return;
-    const start = parseInt(startStr,10);
-    const end = parseInt(endStr,10);
-    if (isNaN(start) || isNaN(end)) { alert('Please enter valid numbers.'); return; }
-    if (start < 1 || end < 1) { alert('Numbers must be 1 or higher.'); return; }
-    if (start > end) { alert('Start number cannot be greater than end number.'); return; }
+function assignRange(uid, name, curStart, curEnd) {
+    document.getElementById('arAlert').innerHTML = '';
+    document.getElementById('arUid').value = uid;
+    document.getElementById('arName').textContent = name;
+    document.getElementById('arStart').value = (curStart !== null && curStart !== 'null') ? curStart : '';
+    document.getElementById('arEnd').value = (curEnd !== null && curEnd !== 'null') ? curEnd : '';
+    document.getElementById('assignRangeModal').classList.add('active');
+}
+
+async function submitAssignRange() {
+    const uid = document.getElementById('arUid').value;
+    const name = document.getElementById('arName').textContent;
+    const start = parseInt(document.getElementById('arStart').value, 10);
+    const end = parseInt(document.getElementById('arEnd').value, 10);
+    const box = document.getElementById('arAlert');
+    if (isNaN(start) || isNaN(end)) { box.innerHTML = '<div class="alert alert-error">Please enter valid numbers</div>'; return; }
+    if (start < 1 || end < 1) { box.innerHTML = '<div class="alert alert-error">Numbers must be 1 or higher</div>'; return; }
+    if (start > end) { box.innerHTML = '<div class="alert alert-error">Start cannot be greater than end</div>'; return; }
     try {
         await db.collection('users').doc(uid).update({ rangeStart: start, rangeEnd: end });
+        document.getElementById('assignRangeModal').classList.remove('active');
         showAlert(`${name} assigned NSN-${String(start).padStart(4,'0')} to NSN-${String(end).padStart(4,'0')}`, 'success');
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
 async function clearRange(uid, name) {
@@ -786,22 +860,37 @@ async function clearRange(uid, name) {
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-async function deleteWorker(uid, name) {
-    if (!confirm(`Delete worker "${name}"? Their collected records will remain.`)) return;
+function deleteWorker(uid, name) {
+    document.getElementById('rwUid').value = uid;
+    document.getElementById('rwName').textContent = name;
+    document.getElementById('removeWorkerModal').classList.add('active');
+}
+
+async function confirmRemoveWorker() {
+    const uid = document.getElementById('rwUid').value;
+    document.getElementById('removeWorkerModal').classList.remove('active');
     try {
         await db.collection('users').doc(uid).delete();
         showAlert('Worker removed from system', 'success');
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-async function forgotPassword() {
-    const email = (document.getElementById('loginEmail').value || '').trim() || prompt('Enter your registered email address:');
-    if (!email) return;
+function forgotPassword() {
+    document.getElementById('fpAlert').innerHTML = '';
+    document.getElementById('fpEmail').value = (document.getElementById('loginEmail').value || '').trim();
+    document.getElementById('forgotPwModal').classList.add('active');
+}
+
+async function submitForgotPassword() {
+    const email = document.getElementById('fpEmail').value.trim();
+    const box = document.getElementById('fpAlert');
+    if (!email) { box.innerHTML = '<div class="alert alert-error">Please enter your email</div>'; return; }
     try {
         await auth.sendPasswordResetEmail(email);
-        showAuthAlert('✓ Password reset link sent to ' + email + '. Check your email (and spam folder).', 'success');
+        box.innerHTML = '<div class="alert alert-success">✓ Reset link sent to ' + email + '. Check your email (and spam).</div>';
+        setTimeout(()=>{ document.getElementById('forgotPwModal').classList.remove('active'); }, 2500);
     } catch(e) {
-        showAuthAlert(friendlyError(e.code), 'error');
+        box.innerHTML = `<div class="alert alert-error">${friendlyError(e.code)}</div>`;
     }
 }
 
@@ -1511,8 +1600,16 @@ async function submitCorrection() {
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
-async function adminDeleteRecord(id, propId) {
-    if (!confirm(`Permanently delete record ${propId}? This cannot be undone.`)) return;
+function adminDeleteRecord(id, propId) {
+    document.getElementById('drId').value = id;
+    document.getElementById('drPropId').textContent = propId;
+    document.getElementById('deleteRecordModal').classList.add('active');
+}
+
+async function confirmDeleteRecord() {
+    const id = document.getElementById('drId').value;
+    const propId = document.getElementById('drPropId').textContent;
+    document.getElementById('deleteRecordModal').classList.remove('active');
     try {
         await db.collection('records').doc(id).delete();
         showAlert('Record ' + propId + ' deleted', 'success');
