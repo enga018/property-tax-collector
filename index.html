@@ -572,7 +572,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.7.1";
+const APP_VERSION = "v1.7.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -612,7 +612,23 @@ auth.onAuthStateChanged(async user => {
             loadAdminSettings();
         } else {
             document.getElementById('workerView').classList.remove('hidden');
-            const profile = await getUserProfile(user.uid);
+            let profile = await getUserProfile(user.uid);
+            // Auto-heal: if a logged-in worker has no profile (e.g. after a reset that
+            // deleted the profile but not the Firebase Auth login), recreate a basic one
+            // so the admin sees them and they function normally.
+            if (!profile) {
+                const recovered = {
+                    name: user.email.split('@')[0],
+                    phone: '',
+                    email: user.email,
+                    role: 'worker',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                try {
+                    await db.collection('users').doc(user.uid).set(recovered, { merge: true });
+                    profile = recovered;
+                } catch(e) { console.error('Profile auto-heal failed:', e); }
+            }
             myProfile = profile;
             document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
             // Live-listen for range/profile changes from admin
