@@ -127,11 +127,20 @@
         .alert-warning{background:#fff3cd;color:#856404;border:1px solid #ffc107}
 
         /* MODAL */
-        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:16px}
-        .modal.active{display:flex}
-        .modal-content{background:var(--surface);border-radius:10px;padding:20px;max-width:500px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);position:relative}
-        .modal-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);padding:4px 8px}
-        .modal-header{font-size:17px;font-weight:600;margin-bottom:14px;padding-right:30px}
+        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
+        .modal.active{display:flex;animation:modalFade 0.2s ease}
+        @keyframes modalFade{from{opacity:0}to{opacity:1}}
+        .modal-content{background:var(--surface);border-radius:18px 18px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.18);position:relative;animation:modalSlide 0.28s cubic-bezier(0.16,1,0.3,1)}
+        @keyframes modalSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .modal-content::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:38px;height:4px;background:var(--border);border-radius:2px}
+        .modal-close{position:absolute;top:14px;right:14px;background:var(--bg);border:none;font-size:18px;line-height:1;cursor:pointer;color:var(--text2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+        .modal-header{font-size:18px;font-weight:700;margin:8px 0 16px;padding-right:36px;color:var(--text)}
+        @media(min-width:520px){
+            .modal{align-items:center}
+            .modal-content{border-radius:16px;animation:modalPop 0.22s ease}
+            .modal-content::before{display:none}
+        }
+        @keyframes modalPop{from{transform:scale(0.94);opacity:0}to{transform:scale(1);opacity:1}}
 
         /* MISC */
         .hidden{display:none!important}
@@ -601,7 +610,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.11.1";
+const APP_VERSION = "v1.12.0";
 
 
 firebase.initializeApp(firebaseConfig);
