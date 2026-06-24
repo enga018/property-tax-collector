@@ -141,6 +141,7 @@
         .section-title{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
         .info-box{background:#e7f5ff;border:1px solid #74c0fc;border-radius:8px;padding:12px;font-size:13px;color:#0c3c72;margin-bottom:12px}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
+        #fullPhotoOverlay.active{display:flex !important}
         .save-success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1500;align-items:center;justify-content:center;padding:20px}
         .save-success-overlay.active{display:flex;animation:fadeIn 0.2s}
         .save-success-box{background:#fff;border-radius:14px;padding:28px 32px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.25);max-width:320px;animation:popIn 0.25s}
@@ -537,6 +538,12 @@
     </div>
 </div>
 
+<!-- Full Photo Viewer -->
+<div id="fullPhotoOverlay" onclick="this.classList.remove('active')" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:2000;align-items:center;justify-content:center;padding:10px;flex-direction:column">
+    <div style="color:#fff;font-size:13px;margin-bottom:8px;opacity:0.7">Tap anywhere to close · pinch to zoom</div>
+    <img id="fullPhotoImg" style="max-width:100%;max-height:90%;object-fit:contain;border-radius:6px">
+</div>
+
 <!-- Change Password Modal -->
 <div id="changePwModal" class="modal">
     <div class="modal-content">
@@ -570,7 +577,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.9.1";
+const APP_VERSION = "v1.9.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -829,6 +836,14 @@ async function saveEditWorker() {
         box.innerHTML = '<div class="alert alert-success">✓ Worker updated!</div>';
         setTimeout(()=>{ document.getElementById('editWorkerModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+function openFullPhoto(recordId) {
+    // Find the record in whichever cache is loaded (admin or worker)
+    const rec = (allRecords||[]).find(r=>r.id===recordId) || (myRecordsCache||[]).find(r=>r.id===recordId);
+    if (!rec || !rec.photo) return;
+    document.getElementById('fullPhotoImg').src = rec.photo;
+    document.getElementById('fullPhotoOverlay').classList.add('active');
 }
 
 function openChangePassword() {
@@ -1611,7 +1626,7 @@ function showDetail(r) {
         </div>` : ''}
         ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${r.remarks}</div>` : ''}
         ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'}</div>` : ''}
-        ${r.photo ? `<div><b>📷 Photo:</b><br><img src="${r.photo}" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
+        ${r.photo ? `<div><b>📷 Photo:</b> <span style="font-size:11px;color:var(--text2)">(tap to enlarge)</span><br><img src="${r.photo}" onclick="openFullPhoto('${r.id}')" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover;cursor:pointer"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
     document.getElementById('detailModal').classList.add('active');
 }
