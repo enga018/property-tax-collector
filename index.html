@@ -245,20 +245,20 @@
                     <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
                     <select id="propertyType" required>
                         <option value="">Select type</option>
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Mixed Use">Mixed Use</option>
-                        <option value="Institutional/Public">Institutional/Public</option>
+                        <option value="Residential">Residential (house, quarters)</option>
+                        <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
+                        <option value="Mixed Use">Mixed Use (shop + house)</option>
+                        <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
                     <select id="ownerCategory" onchange="updateFormFields()" required>
                         <option value="">Select owner type</option>
-                        <option value="Individual">Individual</option>
+                        <option value="Individual">Individual (private person)</option>
                         <option value="Religious">Religious (Church/Temple/Mosque)</option>
-                        <option value="NGO">NGO</option>
-                        <option value="Government">Government</option>
+                        <option value="NGO">NGO (society, association)</option>
+                        <option value="Government">Government (council, dept, school)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -355,6 +355,15 @@
                 <div class="stat-card"><div class="stat-value" id="myAbsent" style="color:var(--warning)">0</div><div class="stat-label">Incomplete</div></div>
                 <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
             </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:13px;font-weight:600;color:var(--text)">Completion</span>
+                    <span id="myCompletePct" style="font-size:15px;font-weight:700;color:var(--success)">0%</span>
+                </div>
+                <div style="background:var(--bg);border-radius:8px;height:10px;overflow:hidden">
+                    <div id="myCompleteBar" style="background:linear-gradient(90deg,#22863a,#2ea043);height:100%;width:0%;transition:width 0.4s"></div>
+                </div>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
                 <div class="stat-card">
                     <div class="section-title">🏗️ Building Types</div>
@@ -413,6 +422,16 @@
                 <div class="stat-card"><div class="stat-value" id="adminToday">0</div><div class="stat-label">Today</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminAbsent">0</div><div class="stat-label">Incomplete</div></div>
                 <div class="stat-card"><div class="stat-value" id="adminWorkerCount">0</div><div class="stat-label">Workers</div></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:13px;font-weight:600;color:var(--text)">Overall Completion</span>
+                    <span id="adminCompletePct" style="font-size:15px;font-weight:700;color:var(--success)">0%</span>
+                </div>
+                <div style="background:var(--bg);border-radius:8px;height:10px;overflow:hidden">
+                    <div id="adminCompleteBar" style="background:linear-gradient(90deg,#22863a,#2ea043);height:100%;width:0%;transition:width 0.4s"></div>
+                </div>
+                <div id="adminCorrectionLine" style="font-size:12px;color:#856404;margin-top:8px"></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                 <div class="stat-card">
@@ -698,7 +717,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.14.1";
+const APP_VERSION = "v1.14.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -760,6 +779,9 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin) {
             document.getElementById('adminView').classList.remove('hidden');
+            const adminProfile = await getUserProfile(user.uid);
+            const adminName = adminProfile?.name || 'Admin';
+            document.getElementById('adminNameBadge').textContent = '⚙️ ' + adminName;
             loadAdminData();
             loadAdminSettings();
         } else {
@@ -984,6 +1006,7 @@ async function saveAdminProfile() {
     if (!name) { box.innerHTML = '<div class="alert alert-error">Name cannot be empty</div>'; return; }
     try {
         await db.collection('users').doc(currentUser.uid).set({ name, email: currentUser.email, role:'admin' }, { merge:true });
+        document.getElementById('adminNameBadge').textContent = '⚙️ ' + name;
         box.innerHTML = '<div class="alert alert-success">✓ Saved!</div>';
         setTimeout(()=>{ document.getElementById('adminProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
@@ -1526,6 +1549,9 @@ function renderMyRecords(records) {
     document.getElementById('myComplete').textContent = complete;
     document.getElementById('myAbsent').textContent = incomplete;
     document.getElementById('myToday').textContent = todayCount;
+    const pct = records.length ? Math.round((complete / records.length) * 100) : 0;
+    document.getElementById('myCompletePct').textContent = pct + '%';
+    document.getElementById('myCompleteBar').style.width = pct + '%';
 
     // Building type breakdown
     const bc = {};
@@ -1703,6 +1729,14 @@ function renderAdminOverview() {
     document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
     document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
     document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).length;
+
+    const incompleteCount = allRecords.filter(r=>needsFollowUp(r)).length;
+    const completeCount = allRecords.length - incompleteCount;
+    const apct = allRecords.length ? Math.round((completeCount / allRecords.length) * 100) : 0;
+    document.getElementById('adminCompletePct').textContent = apct + '%';
+    document.getElementById('adminCompleteBar').style.width = apct + '%';
+    const corrections = allRecords.filter(r=>r.needsCorrection===true).length;
+    document.getElementById('adminCorrectionLine').textContent = corrections ? `🟡 ${corrections} record${corrections>1?'s':''} awaiting correction` : '';
 
     const bc={}, pc={}, oc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
