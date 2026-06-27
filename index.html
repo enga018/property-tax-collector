@@ -706,7 +706,6 @@
     </div>
 </div>
 
-<script src="logic.js"></script>
 <script>
 // ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
@@ -1380,8 +1379,63 @@ function resetForm() {
 
 // ========== PHOTO & GPS ==========
 // Read EXIF orientation (1-8) from a JPEG ArrayBuffer. Returns 1 if none found.
-/* getExifOrientation now lives in logic.js (loaded above) so the binary
-   JPEG/EXIF parser can be unit-tested without a browser. */
+/* === BEGIN testable logic === (extracted verbatim by test/logic.test.js;
+   keep this block self-contained — no DOM/Firebase refs — so it can run in Node) */
+function getExifOrientation(arrayBuffer) {
+    try {
+        const view = new DataView(arrayBuffer);
+        if (view.getUint16(0, false) !== 0xFFD8) return 1; // not a JPEG
+        const length = view.byteLength;
+        let offset = 2;
+        while (offset < length) {
+            const marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker === 0xFFE1) { // APP1 (EXIF)
+                if (view.getUint32(offset + 2, false) !== 0x45786966) return 1; // "Exif"
+                const little = view.getUint16(offset + 8, false) === 0x4949;
+                const tiffOffset = offset + 8;
+                const dirOffset = tiffOffset + view.getUint32(offset + 12, little);
+                const entries = view.getUint16(dirOffset, little);
+                for (let i = 0; i < entries; i++) {
+                    const entryOffset = dirOffset + 2 + i * 12;
+                    if (view.getUint16(entryOffset, little) === 0x0112) {
+                        return view.getUint16(entryOffset + 8, little);
+                    }
+                }
+            } else if ((marker & 0xFF00) !== 0xFF00) {
+                break;
+            } else {
+                offset += view.getUint16(offset, false);
+            }
+        }
+    } catch(e) { /* fall through */ }
+    return 1;
+}
+function needsFollowUp(r) {
+    return isRecordAbsent(r) || r.needsCorrection === true;
+}
+function missingFields(r) {
+    const m = [];
+    if (r.isInstitution) {
+        if (!r.organizationName) m.push('Organization name');
+        if (!r.contactPerson) m.push('Contact person');
+        if (!r.designation) m.push('Designation');
+        if (!r.contact) m.push('Phone number');
+    } else {
+        if (!r.ownerName) m.push('Owner name');
+        if (!r.fatherHusbandName) m.push('Father/Husband name');
+        if (!r.contact) m.push('Phone number');
+    }
+    return m;
+}
+function isRecordAbsent(r) {
+    // Trust the stored flag for all records saved by the app
+    if (typeof r.isAbsent === 'boolean') return r.isAbsent;
+    // Fallback for very old records without the field
+    if (r.isInstitution) return false;
+    return !r.ownerName;
+}
+/* === END testable logic === */
 
 function handlePhotoCapture(e) {
     const file = e.target.files[0];
@@ -1561,8 +1615,6 @@ function renderFollowUp(records) {
     list.innerHTML = items.map(r => recordCard(r, 'followup')).join('');
 }
 
-/* needsFollowUp, missingFields and isRecordAbsent now live in logic.js
-   (loaded above) so they can be unit-tested without a browser. */
 
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
