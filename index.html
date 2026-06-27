@@ -55,6 +55,25 @@
         .bottomnav .navbtn.active{color:var(--primary);background:var(--primary-tint)}
         .bottomnav .navbtn.active .navicon{filter:none}
 
+        /* WIZARD */
+        .wizard-progress{display:flex;gap:4px;margin-bottom:18px}
+        .wstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+        .wstep.done{cursor:pointer}
+        .wdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--text2);border:1.5px solid var(--border);transition:all 0.15s}
+        .wstep.current .wdot{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+        .wstep.done .wdot{background:var(--success);color:#fff;border-color:var(--success)}
+        .wlabel{font-size:10px;line-height:1.2;color:var(--text2);text-align:center;font-weight:600}
+        .wstep.current .wlabel{color:var(--primary)}
+        .wizard-step{display:none}
+        .wizard-step.active{display:block;animation:wizFade 0.18s ease}
+        @keyframes wizFade{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:none}}
+        .wizard-step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px}
+        .wizard-nav{display:flex;gap:8px;margin-top:20px}
+        .review-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+        .review-row:last-child{border-bottom:none}
+        .review-row .rk{color:var(--text2);font-size:13px}
+        .review-row .rv{font-weight:600;font-size:13px;text-align:right;color:var(--text)}
+
         /* FORMS */
         .form-section{display:none}.form-section.active{display:block}
         .form-group{margin-bottom:13px}
@@ -251,123 +270,140 @@
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
                 <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
             </div>
-            <form id="propertyForm" onsubmit="saveRecord(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
-                <div class="form-group">
-                    <label>Property ID <span class="required-star">*</span></label>
-                    <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
-                    <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
-                </div>
-                <div class="form-group">
-                    <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
-                    <select id="propertyType" onchange="updateHouseholdVisibility()" required>
-                        <option value="">Select type</option>
-                        <option value="Residential">Residential (house, quarters)</option>
-                        <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
-                        <option value="Mixed Use">Mixed Use (shop + house)</option>
-                        <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
-                    <select id="ownerCategory" onchange="updateFormFields()" required>
-                        <option value="">Select owner type</option>
-                        <option value="Individual">Individual (private person)</option>
-                        <option value="Religious">Religious (Church/Temple/Mosque)</option>
-                        <option value="NGO">NGO (society, association)</option>
-                        <option value="Government">Government (council, dept, school)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Building Type <span class="required-star">*</span></label>
-                    <select id="buildingType" required>
-                        <option value="">Select building type</option>
-                        <option value="RCC">RCC (Reinforced Concrete)</option>
-                        <option value="Semi RCC">Semi RCC</option>
-                        <option value="Assam Type">Assam Type</option>
-                    </select>
-                </div>
+            <form id="propertyForm" onsubmit="wizardSubmit(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
+                <div class="wizard-progress" id="wizardProgress"></div>
 
-                <hr class="divider">
-                <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
-                <div class="form-group">
-                    <button type="button" id="captureGpsBtn" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
-                    <div id="gpsRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-top:6px">⚠️ Re-capture GPS only while standing at the property.</div>
-                    <div id="locationStatus" class="location-status hidden"></div>
-                    <input type="hidden" id="latitude">
-                    <input type="hidden" id="longitude">
-                    <input type="hidden" id="accuracy">
-                </div>
-
-                <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(GPS auto-stamped · hold phone upright · tap the building on screen to focus)</span></div>
-                <div class="form-group">
-                    <img id="photoPreview" class="photo-preview">
-                    <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
-                    <div id="photoRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
-                    <div class="photo-buttons">
-                        <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
-                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
-                    </div>
-                    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
-                </div>
-
-                <hr class="divider">
-
-                <!-- RESIDENTIAL FIELDS -->
-                <div id="residentialFields">
-                    <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
+                <!-- STEP 1: PROPERTY -->
+                <div class="wizard-step active" data-step="property">
+                    <div class="wizard-step-title">🏠 Property details</div>
                     <div class="form-group">
-                        <label>Owner Name</label>
-                        <input type="text" id="ownerName" placeholder="Full name of property owner">
+                        <label>Property ID <span class="required-star">*</span></label>
+                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
+                        <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
                     </div>
                     <div class="form-group">
-                        <label>Father/Husband Name</label>
-                        <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                        <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
+                        <select id="propertyType" onchange="updateHouseholdVisibility()" required>
+                            <option value="">Select type</option>
+                            <option value="Residential">Residential (house, quarters)</option>
+                            <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
+                            <option value="Mixed Use">Mixed Use (shop + house)</option>
+                            <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Contact Number</label>
-                        <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
+                        <select id="ownerCategory" onchange="updateFormFields()" required>
+                            <option value="">Select owner type</option>
+                            <option value="Individual">Individual (private person)</option>
+                            <option value="Religious">Religious (Church/Temple/Mosque)</option>
+                            <option value="NGO">NGO (society, association)</option>
+                            <option value="Government">Government (council, dept, school)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Building Type <span class="required-star">*</span></label>
+                        <select id="buildingType" required>
+                            <option value="">Select building type</option>
+                            <option value="RCC">RCC (Reinforced Concrete)</option>
+                            <option value="Semi RCC">Semi RCC</option>
+                            <option value="Assam Type">Assam Type</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- INSTITUTION FIELDS -->
-                <div id="institutionFields" class="hidden">
-                    <div class="section-title">Institution Information</div>
+                <!-- STEP 2: LOCATION & PHOTO -->
+                <div class="wizard-step" data-step="location">
+                    <div class="wizard-step-title">📍 Location &amp; photo</div>
+                    <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
                     <div class="form-group">
-                        <label>Organization/Institution Name <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                        <button type="button" id="captureGpsBtn" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
+                        <div id="gpsRecaptureWarn" style="display:none;background:var(--warning-bg);color:var(--warning);font-size:12px;padding:6px 8px;border-radius:4px;margin-top:6px">⚠️ Re-capture GPS only while standing at the property.</div>
+                        <div id="locationStatus" class="location-status hidden"></div>
+                        <input type="hidden" id="latitude">
+                        <input type="hidden" id="longitude">
+                        <input type="hidden" id="accuracy">
                     </div>
+                    <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(GPS auto-stamped · hold phone upright · tap the building on screen to focus)</span></div>
                     <div class="form-group">
-                        <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="contactPerson" placeholder="Name of contact person">
-                    </div>
-                    <div class="form-group">
-                        <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
-                    </div>
-                    <div class="form-group">
-                        <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        <img id="photoPreview" class="photo-preview">
+                        <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
+                        <div id="photoRecaptureWarn" style="display:none;background:var(--warning-bg);color:var(--warning);font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
+                        <div class="photo-buttons">
+                            <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
+                            <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
+                        </div>
+                        <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                     </div>
                 </div>
 
-                <div id="householdSection" style="display:none">
-                    <hr class="divider">
-                    <div class="section-title">👨‍👩‍👧 Households / Families <span style="font-size:11px;color:var(--text2);font-weight:400">(who lives here)</span></div>
+                <!-- STEP 3: OCCUPANT -->
+                <div class="wizard-step" data-step="occupant">
+                    <div class="wizard-step-title">👤 Owner / occupant</div>
+                    <!-- RESIDENTIAL FIELDS -->
+                    <div id="residentialFields">
+                        <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
+                        <div class="form-group">
+                            <label>Owner Name</label>
+                            <input type="text" id="ownerName" placeholder="Full name of property owner">
+                        </div>
+                        <div class="form-group">
+                            <label>Father/Husband Name</label>
+                            <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        </div>
+                    </div>
+                    <!-- INSTITUTION FIELDS -->
+                    <div id="institutionFields" class="hidden">
+                        <div class="section-title">Institution Information</div>
+                        <div class="form-group">
+                            <label>Organization/Institution Name <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="contactPerson" placeholder="Name of contact person">
+                        </div>
+                        <div class="form-group">
+                            <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: HOUSEHOLDS (residential / mixed use only) -->
+                <div class="wizard-step" data-step="households">
+                    <div class="wizard-step-title">👨‍👩‍👧 Households / families</div>
                     <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property. The first member of a family is its head. Leave empty for a vacant/empty house.</div>
-                    <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:#e7f5ff;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
+                    <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:var(--primary-tint);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
                     <div id="familiesContainer"></div>
                     <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
                 </div>
 
-                <hr class="divider">
-                <div class="form-group">
-                    <label>Remarks / Notes</label>
-                    <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
+                <!-- STEP 5: REVIEW & SAVE -->
+                <div class="wizard-step" data-step="review">
+                    <div class="wizard-step-title">✅ Review &amp; save</div>
+                    <div id="wizardReview"></div>
+                    <div class="form-group" style="margin-top:14px">
+                        <label>Remarks / Notes</label>
+                        <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
+                    </div>
                 </div>
-                <div class="button-group">
-                    <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="flex:1">Clear</button>
-                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2">💾 Save & Sync</button>
+
+                <!-- WIZARD NAV -->
+                <div class="wizard-nav">
+                    <button type="button" id="wizBackBtn" class="btn-secondary" onclick="wizardBack()" style="flex:1">← Back</button>
+                    <button type="button" id="wizNextBtn" class="btn-primary" onclick="wizardNext()" style="flex:2">Next →</button>
+                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2;display:none">💾 Save &amp; Sync</button>
                 </div>
+                <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="margin-top:8px;font-size:13px">Clear form</button>
             </form>
         </div>
 
@@ -1174,11 +1210,130 @@ const RELATIONS = ['Head','Spouse','Son','Daughter','Father','Mother','Brother',
 const HOUSEHOLD_PROPERTY_TYPES = ['Residential','Mixed Use'];
 function propertyHasHouseholds(type){ return HOUSEHOLD_PROPERTY_TYPES.includes(type); }
 
+// Property type drives whether the Households step exists; refresh the wizard chrome.
 function updateHouseholdVisibility(){
-    const section = document.getElementById('householdSection');
-    if (!section) return;
-    const type = document.getElementById('propertyType').value;
-    section.style.display = propertyHasHouseholds(type) ? 'block' : 'none';
+    if (typeof refreshWizardChrome === 'function') refreshWizardChrome();
+}
+
+/* ---------------- Collect form wizard ---------------- */
+const WIZARD_STEPS = [
+    { id:'property',   label:'Property' },
+    { id:'location',   label:'Location' },
+    { id:'occupant',   label:'Occupant' },
+    { id:'households', label:'Family', conditional:() => propertyHasHouseholds(document.getElementById('propertyType').value) },
+    { id:'review',     label:'Review' }
+];
+let wizardIndex = 0;
+
+function wizardActiveSteps(){ return WIZARD_STEPS.filter(s => !s.conditional || s.conditional()); }
+
+function showWizardStep(i){
+    const steps = wizardActiveSteps();
+    wizardIndex = Math.max(0, Math.min(i, steps.length - 1));
+    const cur = steps[wizardIndex];
+    document.querySelectorAll('#propertyForm .wizard-step').forEach(el => el.classList.toggle('active', el.dataset.step === cur.id));
+    if (cur.id === 'review') renderReview();
+    refreshWizardChrome();
+    const form = document.getElementById('propertyForm');
+    if (form && form.scrollIntoView) form.scrollIntoView({ block:'start', behavior:'smooth' });
+}
+
+// Re-render the progress dots and the Back/Next/Save buttons for the current position.
+function refreshWizardChrome(){
+    const steps = wizardActiveSteps();
+    if (wizardIndex > steps.length - 1) wizardIndex = steps.length - 1;
+    const cur = steps[wizardIndex];
+    // If the active panel is no longer a valid step (e.g. households removed), fall back.
+    if (cur && !document.querySelector('#propertyForm .wizard-step.active[data-step="'+cur.id+'"]')) {
+        document.querySelectorAll('#propertyForm .wizard-step').forEach(el => el.classList.toggle('active', el.dataset.step === cur.id));
+    }
+    const prog = document.getElementById('wizardProgress');
+    if (prog) prog.innerHTML = steps.map((s,i) => `
+        <div class="wstep ${i<wizardIndex?'done':''} ${i===wizardIndex?'current':''}" ${i<wizardIndex?`onclick="goWizard('${s.id}')"`:''}>
+            <div class="wdot">${i<wizardIndex?'✓':(i+1)}</div>
+            <div class="wlabel">${s.label}</div>
+        </div>`).join('');
+    const back = document.getElementById('wizBackBtn');
+    const next = document.getElementById('wizNextBtn');
+    const save = document.getElementById('submitBtn');
+    const isReview = cur && cur.id === 'review';
+    if (back) back.style.visibility = wizardIndex === 0 ? 'hidden' : 'visible';
+    if (next) next.style.display = isReview ? 'none' : 'block';
+    if (save) save.style.display = isReview ? 'block' : 'none';
+}
+
+function goWizard(stepId){
+    const steps = wizardActiveSteps();
+    const idx = steps.findIndex(s => s.id === stepId);
+    if (idx >= 0) showWizardStep(idx);
+}
+function wizardBack(){ showWizardStep(wizardIndex - 1); }
+function wizardNext(){
+    const steps = wizardActiveSteps();
+    if (!validateWizardStep(steps[wizardIndex].id)) return;
+    showWizardStep(wizardIndex + 1);
+}
+
+// Per-step gates reuse the same rules as saveRecord(); save itself re-validates everything.
+function validateWizardStep(id){
+    if (id === 'property'){
+        if (!document.getElementById('propertyId').value.trim()) return alertFalse('🏷️ Enter the Property ID.');
+        if (!document.getElementById('propertyType').value) return alertFalse('🏠 Choose a Property Type.');
+        if (!document.getElementById('ownerCategory').value) return alertFalse('🏛️ Choose an Owner Type.');
+        if (!document.getElementById('buildingType').value) return alertFalse('🏗️ Choose a Building Type.');
+    }
+    if (id === 'location'){
+        const lat = document.getElementById('latitude').value;
+        const lng = document.getElementById('longitude').value;
+        if (!lat || !lng) return alertFalse('📍 GPS location is required. Please capture location first.');
+        const photoEl = document.getElementById('photoPreview');
+        const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
+        if (!hasPhoto) return alertFalse('📷 Photo is required. Please take a photo first.');
+    }
+    return true;
+}
+function alertFalse(msg){ showAlert(msg, 'error'); return false; }
+
+// Submit handler: only the Review step actually saves; Enter elsewhere just advances.
+function wizardSubmit(e){
+    const steps = wizardActiveSteps();
+    if (steps[wizardIndex] && steps[wizardIndex].id === 'review') return saveRecord(e);
+    e.preventDefault();
+    wizardNext();
+}
+
+function renderReview(){
+    const g = id => (document.getElementById(id).value || '').trim();
+    const isInst = INSTITUTION_CATEGORIES.includes(g('ownerCategory'));
+    const lat = g('latitude'), lng = g('longitude');
+    const photoEl = document.getElementById('photoPreview');
+    const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
+    const hh = householdStats({ families: cleanHouseholds(householdDraft) });
+    const ok = v => `<span style="color:var(--success)">✓ ${v}</span>`;
+    const no = v => `<span style="color:var(--danger)">✗ ${v}</span>`;
+    const row = (k,v,step) => `<div class="review-row"><span class="rk">${k}${step?` <a href="#" onclick="goWizard('${step}');return false" style="font-size:11px;color:var(--primary)">edit</a>`:''}</span><span class="rv">${v||'—'}</span></div>`;
+    const pid = g('propertyId') ? 'NSN-' + g('propertyId').replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0') : '';
+    let h = `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">`;
+    h += row('Property ID', pid, 'property');
+    h += row('Property Type', g('propertyType'), 'property');
+    h += row('Owner Type', g('ownerCategory'), 'property');
+    h += row('Building', g('buildingType'), 'property');
+    h += row('GPS', (lat&&lng)?ok('Captured'):no('Missing'), 'location');
+    h += row('Photo', hasPhoto?ok('Taken'):no('Missing'), 'location');
+    if (isInst){
+        h += row('Organization', g('organizationName'), 'occupant');
+        h += row('Contact person', g('contactPerson'), 'occupant');
+        h += row('Contact', g('instContact'), 'occupant');
+    } else {
+        h += row('Owner', g('ownerName'), 'occupant');
+        h += row('Father/Husband', g('fatherHusbandName'), 'occupant');
+        h += row('Contact', g('contact'), 'occupant');
+    }
+    if (propertyHasHouseholds(g('propertyType'))){
+        h += row('Households', hh.families ? `${hh.families} ${hh.families===1?'family':'families'} · ${hh.population} people` : 'None (vacant)', 'households');
+    }
+    h += `</div>`;
+    document.getElementById('wizardReview').innerHTML = h;
 }
 
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1439,8 +1594,8 @@ function startEditRecord(r) {
     document.getElementById('remarks').value = r.remarks||'';
     // Load households into the draft (deep copy so edits don't mutate the live record)
     householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
-    updateHouseholdVisibility();
     renderHouseholds();
+    showWizardStep(0);
     // Restore photo
     if (r.photo) {
         const p = document.getElementById('photoPreview');
@@ -1529,7 +1684,7 @@ function resetForm() {
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
     renderHouseholds();
-    updateHouseholdVisibility();
+    showWizardStep(0);
     clearEditLocks();
 }
 
@@ -2268,6 +2423,10 @@ function showAlert(msg, type) {
     window.scrollTo({top:0, behavior:'smooth'});
     if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
 }
+
+// Initialize the Collect wizard chrome (progress dots + nav) once the DOM is ready.
+function initWizard(){ if (document.getElementById('wizardProgress')) refreshWizardChrome(); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initWizard); else initWizard();
 
 </script>
 </body>
