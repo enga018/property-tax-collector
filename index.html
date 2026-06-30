@@ -460,6 +460,11 @@
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
+            <div class="section-title" style="margin-top:16px">📋 My Records</div>
+            <div id="myRecordsList" class="records-list"></div>
+            <div id="myRecordsEmpty" class="empty-state hidden">
+                <div class="empty-state-icon">📋</div><p>No records yet.</p>
+            </div>
         </div>
 
         <!-- FOLLOW UP TAB -->
@@ -1621,15 +1626,14 @@ function startEditRecord(r) {
     // Load households into the draft (deep copy so edits don't mutate the live record)
     householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
     renderHouseholds();
-    showWizardStep(0);
-    // Restore photo
+    // Restore photo BEFORE jumping to review (validation needs it)
     if (r.photo) {
         const p = document.getElementById('photoPreview');
         p.src = r.photo; p.style.display = 'block';
         document.getElementById('photoStatus').className = 'photo-status ok';
         document.getElementById('photoStatus').textContent = '✅ Existing photo (retake to change)';
     }
-    // Restore GPS
+    // Restore GPS BEFORE jumping to review (validation needs it)
     if (r.latitude) {
         document.getElementById('latitude').value = r.latitude;
         document.getElementById('longitude').value = r.longitude;
@@ -1639,6 +1643,10 @@ function startEditRecord(r) {
         s.textContent = `✅ Existing: ${r.latitude.toFixed(5)}, ${r.longitude.toFixed(5)}`;
         s.classList.remove('hidden');
     }
+    // Jump to review step for editing
+    const steps = wizardActiveSteps();
+    const reviewIndex = steps.findIndex(s => s.id === 'review');
+    showWizardStep(reviewIndex >= 0 ? reviewIndex : 0);
     document.getElementById('submitBtn').textContent = '💾 Update Record';
     document.getElementById('editBanner').classList.remove('hidden');
 
@@ -1966,6 +1974,15 @@ function renderMyRecords(records) {
     const hh = records.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
     const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
     set('myFamilies',hh.families); set('myPopulation',hh.population); set('myChildren',hh.children); set('myMale',hh.males); set('myFemale',hh.females);
+
+    // Render record list with edit buttons
+    const list = document.getElementById('myRecordsList');
+    const empty = document.getElementById('myRecordsEmpty');
+    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    // Sort by newest first
+    const sorted = [...records].sort((a,b) => (b.localTimestamp||'').localeCompare(a.localTimestamp||''));
+    list.innerHTML = sorted.map(r => recordCard(r, 'myrecords')).join('');
 }
 
 function renderFollowUp(records) {
@@ -2052,7 +2069,7 @@ function recordCard(r, context) {
         ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}${r.needsCorrection ? `<br><span style="font-size:11px">Redo: ${[r.correctionAllowGps?'📍 GPS':'', r.correctionAllowPhoto?'📷 Photo':'', r.correctionAllowDetails?'✏️ Details':''].filter(Boolean).join(', ')||'Details'}</span>` : ''}</div>` : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
-            ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            ${(context === 'followup' || context === 'myrecords') ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
             ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
