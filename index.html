@@ -399,7 +399,7 @@
                     <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property. The first member of a family is its head. Leave empty for a vacant/empty house.</div>
                     <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:var(--primary-tint);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
                     <div id="familiesContainer"></div>
-                    <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
+                    <button type="button" class="btn-primary" onclick="addFamily()" style="width:100%;margin-bottom:10px;padding:12px 16px;font-size:15px">➕ Add a Family</button>
                 </div>
 
                 <!-- STEP 5: REVIEW & SAVE -->
@@ -1427,22 +1427,23 @@ function renderHouseholds(){
             </div>
             <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members <span style="font-size:11px;color:var(--text2);font-weight:400">(first member = head of family)</span></div>
             ${f.members.map((m, mi) => `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
-                    <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
-                    <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
-                        <option value="">Gender</option>
-                        <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
-                        <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
-                        <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
-                    </select>
-                    <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age" oninput="updateMemberField(${fi},${mi},'age',this.value)">
-                    <select onchange="updateMemberField(${fi},${mi},'relation',this.value)">
-                        <option value="">Relation to head</option>
-                        ${RELATIONS.map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
-                    </select>
-                    ${mi===0 ? '<span style="align-self:center;font-size:12px;color:var(--text2)">👑 Head</span>' : `<button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>`}
-                </div>
-            `).join('')}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
+                        <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
+                        <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
+                            <option value="">Gender</option>
+                            <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
+                            <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
+                            <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
+                        </select>
+                        <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age" oninput="updateMemberField(${fi},${mi},'age',this.value)">
+                        ${mi===0 ? '<input type="hidden" value="Head" name="relation">' : `
+                        <select onchange="updateMemberField(${fi},${mi},'relation',this.value)">
+                            <option value="">Relation to head</option>
+                            ${RELATIONS.filter(rel=>rel!=='Head').map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
+                        </select>`}
+                        ${mi===0 ? '<span style="align-self:center;font-size:12px;color:var(--text2)">👑 Head</span>' : `<button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>`}
+                    </div>
+                `).join('')}
             <button type="button" class="btn-secondary" onclick="addMember(${fi})" style="width:100%;margin-top:4px;font-size:13px;padding:8px">➕ Add Member</button>
         </div>
     `).join('');
